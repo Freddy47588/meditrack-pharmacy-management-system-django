@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapus Transaksi</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-lg bg-white shadow-lg rounded-xl p-8 border border-gray-200">
+
+        <h1 class="text-2xl font-bold text-red-600 mb-4 text-center">
+            ⚠️ Hapus Transaksi
+        </h1>
+
+        <p class="text-gray-700 text-center mb-6">
+            Apakah Anda yakin ingin menghapus transaksi 
+            <span class="font-semibold text-gray-900">#{{ object.id }}</span>?
+        </p>
+
+        <div class="bg-gray-50 p-4 rounded-lg border mb-6">
+            <p class="text-gray-700"><b>Tanggal:</b> {{ object.tanggal }}</p>
+            <p class="text-gray-700"><b>Total Harga:</b> Rp {{ object.total_harga }}</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <button 
+                type="submit"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                Hapus Transaksi
+            </button>
+
+            <a href="{% url 'transaksi-list' %}" 
+               class="block w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition">
+                Batal
+            </a>
+        </form>
+
+    </div>
+
+</body>
+</html>

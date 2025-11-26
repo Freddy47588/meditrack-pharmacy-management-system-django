@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Kategori Obat</title>
+
+    <!-- TAILWIND CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+
+    <div class="max-w-4xl mx-auto">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">📂 Daftar Kategori Obat</h1>
+
+            <div class="flex gap-3">
+                <!-- TOMBOL KEMBALI -->
+                <a href="/"
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow font-medium transition">
+                    ← Kembali
+                </a>
+
+                <!-- TOMBOL TAMBAH -->
+                <a href="{% url 'kategori-tambah' %}"
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow font-medium transition">
+                    + Tambah Kategori
+                </a>
+            </div>
+        </div>
+
+        <!-- CARD TABLE -->
+        <div class="bg-white shadow-lg rounded-xl p-6">
+
+            {% if kategori_list %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+
+                    <thead class="bg-gray-200 text-gray-700 text-left">
+                        <tr>
+                            <th class="px-4 py-3">Nama Kategori</th>
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-200">
+                        {% for k in kategori_list %}
+                        <tr class="hover:bg-gray-50">
+
+                            <!-- Nama Kategori -->
+                            <td class="px-4 py-3 font-medium text-blue-700">
+                                <a href="{% url 'kategori-detail' k.pk %}" class="hover:underline">
+                                    {{ k.nama_kategori }}
+                                </a>
+                            </td>
+
+                            <!-- Tombol Aksi -->
+                            <td class="px-4 py-3 text-center flex justify-center gap-2">
+
+                                <!-- EDIT -->
+                                <a href="{% url 'kategori-edit' k.pk %}"
+                                   class="text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1 rounded-lg text-sm">
+                                   Edit
+                                </a>
+
+                                <!-- HAPUS -->
+                                <a href="{% url 'kategori-hapus' k.pk %}"
+                                   class="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-lg text-sm">
+                                   Hapus
+                                </a>
+
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+            {% else %}
+            <p class="text-center text-gray-500 py-6">
+                Belum ada kategori yang tersedia.
+            </p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</body>
+</html>

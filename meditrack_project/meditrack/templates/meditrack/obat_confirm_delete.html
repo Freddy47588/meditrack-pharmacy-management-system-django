@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapus Obat</title>
+
+    <!-- TAILWIND CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white w-full max-w-md shadow-xl rounded-xl p-6">
+
+        <h1 class="text-2xl font-bold text-red-600 mb-4">
+            Hapus Obat
+        </h1>
+
+        <p class="text-gray-700">
+            Apakah Anda yakin ingin menghapus obat:
+        </p>
+
+        <p class="mt-2 mb-4 text-lg font-semibold text-gray-900">
+            "{{ object.nama_obat }}"
+        </p>
+
+        <p class="text-gray-600 text-sm mb-6">
+            Tindakan ini tidak dapat dibatalkan. Pastikan data yang dihapus sudah benar.
+        </p>
+
+        <form method="post" class="flex gap-3">
+            {% csrf_token %}
+
+            <!-- Tombol Hapus -->
+            <button 
+                type="submit"
+                class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                Hapus
+            </button>
+
+            <!-- Tombol Batal -->
+            <a 
+                href="{% url 'obat-list' %}"
+                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium text-center transition">
+                Batal
+            </a>
+        </form>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Transaksi</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+
+    <div class="max-w-6xl mx-auto">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">
+                🧾 Daftar Transaksi
+            </h1>
+
+            <a href="{% url 'home' %}"
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition">
+                ← Kembali
+            </a>
+        </div>
+
+        <!-- TABEL -->
+        <div class="bg-white shadow-lg rounded-xl border overflow-x-auto">
+
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-blue-600 text-white text-sm uppercase tracking-wide">
+                    <tr>
+                        <th class="px-6 py-3">ID</th>
+                        <th class="px-6 py-3">Tanggal</th>
+                        <th class="px-6 py-3">Total Harga</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-200">
+
+                    {% for t in transaksi_list %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 font-medium text-gray-800">
+                            #{{ t.id }}
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-700">
+                            {{ t.tanggal }}
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-700">
+                            Rp {{ t.total_harga }}
+                        </td>
+
+                        <td class="px-6 py-4 text-center">
+                            <a href="{% url 'transaksi-detail' t.pk %}"
+                               class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                                Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                            Belum ada transaksi.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

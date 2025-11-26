@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Obat</title>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+
+    <div class="max-w-5xl mx-auto">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">💊 Daftar Obat</h1>
+
+            <div class="flex gap-3">
+                <!-- BUTTON KEMBALI -->
+                <a href="{% url 'home' %}"
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg shadow font-medium transition">
+                    ← Kembali
+                </a>
+
+                <!-- BUTTON TAMBAH -->
+                <a href="{% url 'obat-tambah' %}"
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow font-medium transition">
+                    + Tambah Obat
+                </a>
+            </div>
+        </div>
+
+        <!-- CARD CONTAINER -->
+        <div class="bg-white shadow-lg rounded-xl p-6">
+
+            {% if obat_list %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+
+                    <!-- HEADER TABLE -->
+                    <thead class="bg-gray-200 text-gray-700 text-left">
+                        <tr>
+                            <th class="px-4 py-3">Nama Obat</th>
+                            <th class="px-4 py-3">Kategori</th>
+                            <th class="px-4 py-3">Supplier</th>
+                            <th class="px-4 py-3">Stok</th>
+                            <th class="px-4 py-3">Harga</th>
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <!-- BODY TABLE -->
+                    <tbody class="divide-y divide-gray-200">
+
+                        {% for o in obat_list %}
+                        <tr class="hover:bg-gray-50">
+
+                            <!-- NAMA OBAT -->
+                            <td class="px-4 py-3 font-medium text-blue-700">
+                                <a href="{% url 'obat-detail' o.pk %}"
+                                   class="hover:underline">
+                                   {{ o.nama_obat }}
+                                </a>
+                            </td>
+
+                            <td class="px-4 py-3">{{ o.kategori.nama_kategori }}</td>
+                            <td class="px-4 py-3">{{ o.supplier.nama_supplier }}</td>
+                            <td class="px-4 py-3">{{ o.stok }}</td>
+
+                            <td class="px-4 py-3 text-green-700 font-semibold">
+                                Rp {{ o.harga }}
+                            </td>
+
+                            <!-- ACTION BUTTONS -->
+                            <td class="px-4 py-3 text-center flex justify-center gap-2">
+
+                                <a href="{% url 'obat-detail' o.pk %}"
+                                   class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-lg text-sm">
+                                   Detail
+                                </a>
+
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <p class="text-center text-gray-500 py-6">
+                Belum ada data obat.
+            </p>
+            {% endif %}
+
+        </div>
+    </div>
+
+</body>
+</html>

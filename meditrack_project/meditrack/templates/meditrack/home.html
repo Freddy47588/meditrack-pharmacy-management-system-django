@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Apotek</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<div class="flex">
+
+    <!-- SIDEBAR -->
+    <div class="w-64 bg-white shadow-md h-screen p-6">
+        <h1 class="text-xl font-bold text-blue-600 mb-2">Meditrack</h1>
+        <p class="text-gray-500 text-sm mb-6">Manajemen Penjualan Apotek</p>
+
+        <nav class="space-y-3">
+            <a href="{% url 'home' %}" class="block text-gray-800 hover:text-blue-600 font-semibold">Dashboard</a>
+            <a href="{% url 'obat-list' %}" class="block text-gray-800 hover:text-blue-600">Manajemen Obat</a>
+            <a href="{% url 'supplier-list' %}" class="block text-gray-800 hover:text-blue-600">Supplier</a>
+            <a href="{% url 'kategori-list' %}" class="block text-gray-800 hover:text-blue-600">Kategori Obat</a>
+            <a href="{% url 'transaksi-list' %}" class="block text-gray-800 hover:text-blue-600">Transaksi</a>
+            <a href="{% url 'kasir' %}" class="block text-gray-800 hover:text-blue-600">Kasir</a>
+        </nav>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 p-10">
+
+        <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+
+        <!-- CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+
+            <!-- Total Obat -->
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                <p class="text-gray-500">Total Obat</p>
+                <h3 class="text-3xl font-bold text-blue-600">{{ total_obat }}</h3>
+                <a href="{% url 'obat-list' %}" class="text-sm text-blue-500 hover:underline mt-2 inline-block">Lihat Detail →</a>
+            </div>
+
+            <!-- Total Supplier -->
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                <p class="text-gray-500">Total Supplier</p>
+                <h3 class="text-3xl font-bold text-green-600">{{ total_supplier }}</h3>
+                <a href="{% url 'supplier-list' %}" class="text-sm text-green-500 hover:underline mt-2 inline-block">Lihat Detail →</a>
+            </div>
+
+            <!-- Total Kategori -->
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                <p class="text-gray-500">Kategori Obat</p>
+                <h3 class="text-3xl font-bold text-yellow-600">{{ total_kategori }}</h3>
+                <a href="{% url 'kategori-list' %}" class="text-sm text-yellow-600 hover:underline mt-2 inline-block">Lihat Detail →</a>
+            </div>
+
+            <!-- Total Transaksi -->
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                <p class="text-gray-500">Total Transaksi</p>
+                <h3 class="text-3xl font-bold text-purple-600">{{ total_transaksi }}</h3>
+                <a href="{% url 'transaksi-list' %}" class="text-sm text-purple-500 hover:underline mt-2 inline-block">Lihat Detail →</a>
+            </div>
+        </div>
+
+        <!-- STOK RENDAH -->
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">⚠️ Peringatan Stok Rendah</h3>
+                <a href="{% url 'obat-list' %}" class="text-sm text-blue-600 hover:underline">Kelola Stok →</a>
+            </div>
+
+            {% if obat_stok_rendah %}
+            <ul class="space-y-2">
+                {% for obat in obat_stok_rendah %}
+                <li class="flex justify-between items-center p-3 border rounded-lg bg-red-50 border-red-200 hover:bg-red-100 transition">
+                    <div>
+                        <span class="font-semibold">{{ obat.nama_obat }}</span>
+                        <span class="text-sm text-gray-600 block">{{ obat.kategori.nama_kategori }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-red-600">Stok: {{ obat.stok }}</span>
+                        <a href="{% url 'obat-edit' obat.pk %}" class="text-sm text-blue-600 hover:underline block">Edit Stok</a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-gray-500 text-center py-4">✅ Tidak ada obat dengan stok rendah.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

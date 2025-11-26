@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Supplier</title>
+
+    <!-- TAILWIND -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-5xl mx-auto">
+      <!-- HEADER + BUTTONS -->
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">📦 Daftar Supplier</h1>
+
+        <div class="flex gap-3">
+          <!-- TOMBOL KEMBALI -->
+          <a
+            href="/"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow font-semibold transition"
+          >
+            ← Kembali
+          </a>
+
+          <!-- TOMBOL TAMBAH -->
+          <a
+            href="{% url 'supplier-tambah' %}"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow font-semibold transition"
+          >
+            + Tambah Supplier
+          </a>
+        </div>
+      </div>
+
+      <!-- TABLE WRAPPER -->
+      <div
+        class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden"
+      >
+        <table class="min-w-full">
+          <thead class="bg-gray-100 border-b">
+            <tr>
+              <th class="px-6 py-3 text-left text-gray-700 font-semibold">
+                Nama Supplier
+              </th>
+              <th class="px-6 py-3 text-left text-gray-700 font-semibold">
+                Alamat
+              </th>
+              <th class="px-6 py-3 text-left text-gray-700 font-semibold">
+                No. Telepon
+              </th>
+              <th class="px-6 py-3 text-right text-gray-700 font-semibold">
+                Aksi
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-200">
+            {% for s in supplier_list %}
+            <tr class="hover:bg-gray-50 transition">
+              <td class="px-6 py-4">
+                <a
+                  href="{% url 'supplier-detail' s.pk %}"
+                  class="text-blue-600 hover:underline font-semibold"
+                >
+                  {{ s.nama_supplier }}
+                </a>
+              </td>
+
+              <td class="px-6 py-4 text-gray-700">{{ s.alamat }}</td>
+
+              <td class="px-6 py-4">
+                <span
+                  class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {{ s.no_telepon }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-right flex gap-2 justify-end">
+                <!-- DETAIL -->
+                <a
+                  href="{% url 'supplier-detail' s.pk %}"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow transition text-sm font-semibold"
+                >
+                  Detail
+                </a>
+
+                <a
+                  href="{% url 'supplier-edit' s.pk %}"
+                  class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow transition text-sm font-semibold"
+                >
+                  Edit
+                </a>
+
+                <a
+                  href="{% url 'supplier-hapus' s.pk %}"
+                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg shadow transition text-sm font-semibold"
+                >
+                  Hapus
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                Belum ada supplier.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

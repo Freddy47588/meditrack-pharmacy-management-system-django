@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapus Kategori</title>
+
+    <!-- TAILWIND CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white w-full max-w-md shadow-xl rounded-xl p-6">
+
+        <h1 class="text-2xl font-bold text-red-600 mb-4">
+            Hapus Kategori
+        </h1>
+
+        <p class="text-gray-700">
+            Apakah Anda yakin ingin menghapus kategori:
+        </p>
+
+        <p class="mt-2 mb-4 text-lg font-semibold text-gray-900">
+            "{{ object.nama_kategori }}"
+        </p>
+
+        <p class="text-gray-600 text-sm mb-6">
+            Tindakan ini tidak dapat dibatalkan dan semua data yang terkait mungkin ikut terpengaruh.
+        </p>
+
+        <form method="post" class="flex gap-3">
+            {% csrf_token %}
+            
+            <!-- Tombol Hapus -->
+            <button 
+                type="submit"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition w-1/2">
+                Hapus
+            </button>
+
+            <!-- Tombol Batal -->
+            <a 
+                href="{% url 'kategori-list' %}"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium transition w-1/2 text-center">
+                Batal
+            </a>
+        </form>
+
+    </div>
+
+</body>
+</html>

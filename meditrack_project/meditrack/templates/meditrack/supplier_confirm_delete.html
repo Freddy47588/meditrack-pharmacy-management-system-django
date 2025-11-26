@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapus Supplier</title>
+
+    <!-- TAILWIND -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center px-4">
+
+    <div class="bg-white w-full max-w-md p-8 rounded-xl shadow-lg border border-gray-200">
+
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">
+            Hapus Supplier
+        </h1>
+
+        <p class="text-gray-600 text-center mb-6">
+            Yakin ingin menghapus supplier 
+            <b class="text-gray-900">{{ object.nama_supplier }}</b>?
+        </p>
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+
+            <button type="submit"
+                class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg shadow transition font-semibold">
+                Hapus Supplier
+            </button>
+        </form>
+
+        <a href="{% url 'supplier-list' %}"
+            class="block mt-4 w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg transition font-semibold">
+            Batal
+        </a>
+    </div>
+
+</body>
+</html>

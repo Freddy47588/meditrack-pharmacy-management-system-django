@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Obat</title>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
+
+    <div class="bg-white w-full max-w-2xl shadow-xl rounded-xl p-8">
+
+        <!-- NOTIFIKASI BERHASIL -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg">
+                ✔ {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- TITLE -->
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">
+            📝 Form Obat
+        </h1>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Nama Obat</label>
+                {{ form.nama_obat }}
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Kategori Obat</label>
+                {{ form.kategori }}
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Supplier</label>
+                {{ form.supplier }}
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Harga (Rp)</label>
+                {{ form.harga }}
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Stok</label>
+                {{ form.stok }}
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition">
+                    Simpan
+                </button>
+
+                <a href="{% url 'obat-list' %}"
+                   class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-medium text-center transition">
+                    Kembali
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</body>
+</html>

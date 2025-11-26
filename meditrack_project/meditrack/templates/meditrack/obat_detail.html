@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Obat</title>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
+
+    <div class="bg-white w-full max-w-lg shadow-xl rounded-xl p-6">
+
+        <!-- TITLE -->
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">
+            💊 Detail Obat
+        </h1>
+
+        <!-- DETAIL CONTENT -->
+        <div class="space-y-4 text-gray-700">
+
+            <p>
+                <span class="font-semibold text-gray-900">Nama Obat:</span><br>
+                <span class="block text-lg mt-1">{{ object.nama_obat }}</span>
+            </p>
+
+            <p>
+                <span class="font-semibold text-gray-900">Kategori:</span><br>
+                <span class="block text-lg mt-1">{{ object.kategori.nama_kategori }}</span>
+            </p>
+
+            <p>
+                <span class="font-semibold text-gray-900">Supplier:</span><br>
+                <span class="block text-lg mt-1">{{ object.supplier.nama_supplier }}</span>
+            </p>
+
+            <p>
+                <span class="font-semibold text-gray-900">Harga:</span><br>
+                <span class="block text-lg mt-1 text-green-700 font-semibold">
+                    Rp {{ object.harga }}
+                </span>
+            </p>
+
+            <p>
+                <span class="font-semibold text-gray-900">Stok:</span><br>
+                <span class="block text-lg mt-1">{{ object.stok }} unit</span>
+            </p>
+
+            <p>
+                <span class="font-semibold text-gray-900">Tanggal Masuk:</span><br>
+                <span class="block text-lg mt-1">{{ object.tanggal_masuk }}</span>
+            </p>
+
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="mt-6 flex items-center gap-3">
+
+            <!-- Edit -->
+            <a href="{% url 'obat-edit' object.pk %}"
+               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium text-center transition">
+                Edit
+            </a>
+
+            <!-- Hapus -->
+            <a href="{% url 'obat-hapus' object.pk %}"
+               class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-medium text-center transition">
+                Hapus
+            </a>
+
+            <!-- Kembali -->
+            <a href="{% url 'obat-list' %}"
+               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-medium text-center transition">
+                Kembali
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>

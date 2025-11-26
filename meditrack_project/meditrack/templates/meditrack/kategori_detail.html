@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Kategori</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
+
+    <div class="bg-white shadow-xl rounded-xl w-full max-w-lg p-6">
+
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">
+            📂 Detail Kategori
+        </h1>
+
+        <!-- DETAIL CONTENT -->
+        <div class="space-y-3 text-gray-700">
+            <p>
+                <span class="font-semibold text-gray-900">Nama Kategori:</span><br>
+                <span class="block text-lg mt-1">{{ object.nama_kategori }}</span>
+            </p>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="mt-6 flex items-center gap-3">
+
+            <!-- Edit -->
+            <a href="{% url 'kategori-edit' object.pk %}"
+               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium text-center transition">
+                Edit
+            </a>
+
+            <!-- Hapus -->
+            <a href="{% url 'kategori-hapus' object.pk %}"
+               class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-medium text-center transition">
+                Hapus
+            </a>
+
+            <!-- Kembali -->
+            <a href="{% url 'kategori-list' %}"
+               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-medium text-center transition">
+                Kembali
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>
