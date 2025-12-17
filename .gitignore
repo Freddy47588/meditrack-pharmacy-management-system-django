@@ -6,19 +6,4 @@ __pycache__/
 env/
 venv/
 
-# Database lokal (jangan upload ke GitHub)
-db.sqlite3
 
-# Media & static hasil generate
-/media/
-staticfiles/
-
-# Django collected static
-/static/
-
-# VSCode files
-.vscode/
-
-# OS files
-.DS_Store
-Thumbs.db
