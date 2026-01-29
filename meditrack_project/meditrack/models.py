@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -62,16 +63,24 @@ class Obat(models.Model):
 # 4. Transaksi Penjualan
 # ================================
 class TransaksiPenjualan(models.Model):
+    STATUS_CHOICES = (
+        ("DRAFT", "Keranjang (Draft)"),
+        ("PENDING", "Menunggu Pembayaran"),
+        ("PAID", "Lunas"),
+        ("CANCELLED", "Dibatalkan"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="transaksi_penjualan"
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="DRAFT")
     tanggal = models.DateTimeField(auto_now_add=True)
     total_harga = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
-    class Meta:
-        verbose_name = "Transaksi Penjualan"
-        verbose_name_plural = "Transaksi Penjualan"
-
     def __str__(self):
-        return f"Transaksi #{self.id} - {self.tanggal.strftime('%d/%m/%Y %H:%M')}"
-
+        return f"Transaksi #{self.id} - {self.user} - {self.status}"
 
 # ================================
 # 5. Detail Transaksi

@@ -39,8 +39,27 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'meditrack',
     'rest_framework',
+    'rest_framework.authtoken',
+    'drf_spectacular',
     
 ]
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",  # ✅ penting
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Meditrack API",
+    "DESCRIPTION": "API untuk UAS Framework Programming & Sistem Terdistribusi (Decoupled Architecture).",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
