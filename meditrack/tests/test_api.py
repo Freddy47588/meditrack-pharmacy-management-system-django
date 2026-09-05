@@ -117,6 +117,8 @@ class AuthenticationTests(APIData):
 
 class CatalogTests(APIData):
     def setUp(self):
+        self.user.is_staff = True
+        self.user.save()
         self.authenticate()
 
     def test_obat_crud_and_response_fields(self):

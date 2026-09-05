@@ -1,0 +1,1 @@
+<!doctype html><html lang="id"><title>Kasir</title><h1>Kasir</h1>{% for message in messages %}<p>{{ message }}</p>{% endfor %}<form method="post">{% csrf_token %}{{ formset.management_form }}{{ formset.as_p }}<button>Checkout</button></form></html>

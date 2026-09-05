@@ -1,3 +1,18 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
+from .services import get_cart, owned_draft, save_item, recalc, checkout, pay_transaction
+from .permissions import StaffOrReadOnly
+
+class StaffMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
+
+class OwnedMixin(LoginRequiredMixin):
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -14,7 +29,7 @@ from .models import (
 )
 from .forms import (
     ObatForm, SupplierForm, KategoriForm,
-    TransaksiForm, KasirItemForm
+    KasirItemForm
 )
 from .serializers import (
     ObatSerializer, SupplierSerializer, KategoriSerializer,
@@ -33,13 +48,13 @@ from django.db.models import Sum
 # HOME DASHBOARD
 # =====================================================
 
-class HomeView(View):
+class HomeView(LoginRequiredMixin, View):
     def get(self, request):
         context = {
             "total_obat": Obat.objects.count(),
             "total_supplier": Supplier.objects.count(),
             "total_kategori": KategoriObat.objects.count(),
-            "total_transaksi": TransaksiPenjualan.objects.count(),
+            "total_transaksi": TransaksiPenjualan.objects.filter(user=request.user).count(),
             "obat_stok_rendah": Obat.objects.filter(stok__lte=5),
         }
         return render(request, "meditrack/home.html", context)
@@ -60,7 +75,7 @@ class ObatDetailView(DetailView):
     template_name = "meditrack/obat_detail.html"
 
 
-class ObatCreateView(CreateView):
+class ObatCreateView(StaffMixin, CreateView):
     model = Obat
     form_class = ObatForm
     template_name = "meditrack/obat_form.html"
@@ -71,7 +86,7 @@ class ObatCreateView(CreateView):
         return super().form_valid(form)
 
 
-class ObatUpdateView(UpdateView):
+class ObatUpdateView(StaffMixin, UpdateView):
     model = Obat
     form_class = ObatForm
     template_name = "meditrack/obat_form.html"
@@ -84,7 +99,7 @@ class ObatUpdateView(UpdateView):
     
 
 
-class ObatDeleteView(DeleteView):
+class ObatDeleteView(StaffMixin, DeleteView):
     model = Obat
     template_name = "meditrack/obat_confirm_delete.html"
     success_url = reverse_lazy("obat-list")
@@ -107,7 +122,7 @@ class SupplierDetailView(DetailView):
 
 from django.contrib import messages
 
-class SupplierCreateView(CreateView):
+class SupplierCreateView(StaffMixin, CreateView):
     model = Supplier
     form_class = SupplierForm
     template_name = "meditrack/supplier_form.html"
@@ -118,7 +133,7 @@ class SupplierCreateView(CreateView):
         return super().form_valid(form)
 
 
-class SupplierUpdateView(UpdateView):
+class SupplierUpdateView(StaffMixin, UpdateView):
     model = Supplier
     form_class = SupplierForm
     template_name = "meditrack/supplier_form.html"
@@ -130,7 +145,7 @@ class SupplierUpdateView(UpdateView):
 
 
 
-class SupplierDeleteView(DeleteView):
+class SupplierDeleteView(StaffMixin, DeleteView):
     model = Supplier
     template_name = "meditrack/supplier_confirm_delete.html"
     success_url = reverse_lazy("supplier-list")
@@ -148,7 +163,7 @@ class KategoriListView(ListView):
 
 from django.contrib import messages
 
-class KategoriCreateView(CreateView):
+class KategoriCreateView(StaffMixin, CreateView):
     model = KategoriObat
     form_class = KategoriForm
     template_name = "meditrack/kategori_form.html"
@@ -159,7 +174,7 @@ class KategoriCreateView(CreateView):
         return super().form_valid(form)
 
 
-class KategoriUpdateView(UpdateView):
+class KategoriUpdateView(StaffMixin, UpdateView):
     model = KategoriObat
     form_class = KategoriForm
     template_name = "meditrack/kategori_form.html"
@@ -170,7 +185,7 @@ class KategoriUpdateView(UpdateView):
         return super().form_valid(form)
 
 
-class KategoriDeleteView(DeleteView):
+class KategoriDeleteView(StaffMixin, DeleteView):
     model = KategoriObat
     template_name = "meditrack/kategori_confirm_delete.html"
     success_url = reverse_lazy("kategori-list")
@@ -180,107 +195,80 @@ class KategoriDeleteView(DeleteView):
 # T R A N S A K S I
 # =====================================================
 
-class TransaksiListView(ListView):
+class TransaksiListView(OwnedMixin, ListView):
     model = TransaksiPenjualan
     template_name = "meditrack/transaksi_list.html"
     context_object_name = "transaksi_list"
 
 
-class TransaksiDetailView(DetailView):
+class TransaksiDetailView(OwnedMixin, DetailView):
     model = TransaksiPenjualan
     template_name = "meditrack/transaksi_detail.html"
 
 
-class TransaksiCreateView(CreateView):
-    model = TransaksiPenjualan
-    form_class = TransaksiForm
-    template_name = "meditrack/transaksi_form.html"
-    success_url = reverse_lazy("transaksi-list")
+class TransaksiCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        return redirect('kasir')
+
+    post = get
 
 
 # =====================================================
 # K A S I R  ( F O R M S E T )
 # =====================================================
 
+@login_required
 def KasirView(request):
-    KasirFormSet = formset_factory(KasirItemForm, extra=1)
-
-    if request.method == "POST":
-        formset = KasirFormSet(request.POST)
-
-        if formset.is_valid():
-            transaksi = TransaksiPenjualan.objects.create(total_harga=0)
-            total = 0
-
-            for item in formset.cleaned_data:
-                obat = item.get("obat")
-                jumlah = item.get("jumlah")
-
-                if obat and jumlah:
-
-                    # Validasi stok
-                    if obat.stok < jumlah:
-                        formset.add_error(None, f"Stok {obat.nama_obat} tidak mencukupi!")
-                        transaksi.delete()
-                        return render(request, "meditrack/kasir.html", {"formset": formset})
-
-                    subtotal = obat.harga * jumlah
-                    total += subtotal
-
-                    # Buat detail transaksi
-                    DetailTransaksi.objects.create(
-                        transaksi=transaksi,
-                        obat=obat,
-                        jumlah=jumlah,
-                        subtotal=subtotal,
-                    )
-
-                    # Kurangi stok obat
-                    obat.stok -= jumlah
-                    obat.save()
-
-            transaksi.total_harga = total
-            transaksi.save()
-
-            return redirect("transaksi-detail", pk=transaksi.pk)
-
-    else:
-        formset = KasirFormSet()
-
-    return render(request, "meditrack/kasir.html", {"formset": formset})
+    if not request.user.is_staff:
+        raise PermissionDenied
+    KasirFormSet = formset_factory(KasirItemForm, extra=3, min_num=1, validate_min=True)
+    formset = KasirFormSet(request.POST or None)
+    if request.method == "POST" and formset.is_valid():
+        try:
+            with transaction.atomic():
+                trx = TransaksiPenjualan.objects.create(user=request.user)
+                for row in formset.cleaned_data:
+                    if row:
+                        save_item(trx, row['obat'], row['jumlah'])
+                trx = checkout(trx.pk, request.user)
+            messages.success(request, "Checkout berhasil. Transaksi menunggu pembayaran.")
+            return redirect('transaksi-detail', pk=trx.pk)
+        except ValidationError as exc:
+            messages.error(request, str(exc.detail))
+    return render(request, 'meditrack/kasir.html', {'formset': formset})
 
 
-# =====================================================
-# H A P U S  T R A N S A K S I
-# =====================================================
-
-class TransaksiDeleteView(View):
+class TransaksiDeleteView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        transaksi = get_object_or_404(TransaksiPenjualan, pk=pk)
-        return render(request, "meditrack/transaksi_confirm_delete.html", {"object": transaksi})
+        trx = get_object_or_404(TransaksiPenjualan, pk=pk, user=request.user)
+        return render(request, 'meditrack/transaksi_confirm_delete.html', {'object': trx})
 
     def post(self, request, pk):
-        transaksi = get_object_or_404(TransaksiPenjualan, pk=pk)
-
-        # Kembalikan stok obat
-        for item in transaksi.detail.all():
-            item.obat.stok += item.jumlah
-            item.obat.save()
-
-        transaksi.detail.all().delete()
-        transaksi.delete()
-
-        return redirect("transaksi-list")
+        with transaction.atomic():
+            trx = get_object_or_404(TransaksiPenjualan.objects.select_for_update(), pk=pk, user=request.user)
+            if trx.status != 'DRAFT':
+                messages.error(request, 'Hanya transaksi DRAFT dapat dihapus.')
+                return redirect('transaksi-detail', pk=pk)
+            trx.delete()
+        messages.success(request, 'Transaksi draft dihapus.')
+        return redirect('transaksi-list')
 
 
-# =====================================================
-# A P I  ( D R F )  - UAS DECOUPLED (ECOMMERCE FLOW)
-# =====================================================
+class TransaksiPayView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        get_object_or_404(TransaksiPenjualan, pk=pk, user=request.user)
+        try:
+            pay_transaction(pk, request.user)
+            messages.success(request, 'Pembayaran simulasi berhasil.')
+        except ValidationError as exc:
+            messages.error(request, str(exc.detail))
+        return redirect('transaksi-detail', pk=pk)
+
 
 class ObatViewSet(viewsets.ModelViewSet):
     queryset = Obat.objects.select_related("kategori", "supplier").all().order_by("-tanggal_masuk")
     serializer_class = ObatSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [StaffOrReadOnly]
 
     # Search + Ordering untuk feel ecommerce
     filter_backends = [SearchFilter, OrderingFilter]
@@ -291,19 +279,40 @@ class ObatViewSet(viewsets.ModelViewSet):
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all().order_by("nama_supplier")
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [StaffOrReadOnly]
 
 
 class KategoriViewSet(viewsets.ModelViewSet):
     queryset = KategoriObat.objects.all().order_by("nama_kategori")
     serializer_class = KategoriSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [StaffOrReadOnly]
 
 
 class DetailTransaksiViewSet(viewsets.ModelViewSet):
-    queryset = DetailTransaksi.objects.select_related("obat", "transaksi").all()
     serializer_class = DetailTransaksiSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return DetailTransaksi.objects.none()
+        return DetailTransaksi.objects.filter(transaksi__user=self.request.user).select_related('obat', 'transaksi')
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        trx = owned_draft(serializer.validated_data['transaksi'].pk, self.request.user)
+        serializer.instance = save_item(trx, serializer.validated_data['obat'], serializer.validated_data['jumlah'])
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        item = self.get_object()
+        trx = owned_draft(item.transaksi_id, self.request.user)
+        serializer.instance = save_item(trx, serializer.validated_data.get('obat', item.obat), serializer.validated_data.get('jumlah', item.jumlah), item=item)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        trx = owned_draft(instance.transaksi_id, self.request.user)
+        instance.delete()
+        recalc(trx)
 
 
 class TransaksiViewSet(viewsets.ModelViewSet):
@@ -311,120 +320,69 @@ class TransaksiViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return TransaksiPenjualan.objects.filter(user=self.request.user).order_by("-tanggal")
+        if getattr(self, 'swagger_fake_view', False):
+            return TransaksiPenjualan.objects.none()
+        return TransaksiPenjualan.objects.filter(user=self.request.user).prefetch_related('detail__obat').order_by('-tanggal')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.instance = get_cart(self.request.user)
 
-    def _recalc_total(self, trx: TransaksiPenjualan):
-        total = trx.detail.aggregate(t=Sum("subtotal"))["t"] or 0
-        trx.total_harga = total
-        trx.save(update_fields=["total_harga"])
+    @transaction.atomic
+    def perform_update(self, serializer):
+        owned_draft(serializer.instance.pk, self.request.user)
+        serializer.save()
 
-    # ===== Riwayat pesanan =====
-    @action(detail=False, methods=["GET"], url_path="my")
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        owned_draft(instance.pk, self.request.user).delete()
+
+    @action(detail=False, methods=['GET'], url_path='my')
     def my_orders(self, request):
-        qs = self.get_queryset().exclude(status="DRAFT")
-        return Response(self.get_serializer(qs, many=True).data)
+        return Response(self.get_serializer(self.get_queryset().exclude(status='DRAFT'), many=True).data)
 
-    # ===== CART =====
-    @action(detail=False, methods=["GET"], url_path="cart")
+    @action(detail=False, methods=['GET'], url_path='cart')
     def cart(self, request):
-        trx, _ = TransaksiPenjualan.objects.get_or_create(
-            user=request.user, status="DRAFT"
-        )
-        return Response(self.get_serializer(trx).data)
+        return Response(self.get_serializer(get_cart(request.user)).data)
 
-    @action(detail=False, methods=["POST"], url_path="cart/add")
+    @action(detail=False, methods=['POST'], url_path='cart/add')
+    @transaction.atomic
     def cart_add(self, request):
-        trx, _ = TransaksiPenjualan.objects.get_or_create(
-            user=request.user, status="DRAFT"
-        )
-
-        data = request.data.copy()
-        data["transaksi"] = trx.id
-
-        ser = DetailTransaksiSerializer(data=data)
+        trx = get_cart(request.user)
+        data = {**request.data, 'transaksi': trx.pk}
+        ser = DetailTransaksiSerializer(data=data, context={'request': request})
         ser.is_valid(raise_exception=True)
-        ser.save()
+        save_item(trx, ser.validated_data['obat'], ser.validated_data['jumlah'])
+        trx.refresh_from_db()
+        return Response(self.get_serializer(trx).data, status=201)
 
-        self._recalc_total(trx)
-        return Response(self.get_serializer(trx).data, status=status.HTTP_201_CREATED)
-
-    # ===== UPDATE ITEM CART =====
-    @action(detail=False, methods=["patch"], url_path=r"cart/items/(?P<item_id>[^/.]+)")
+    @action(detail=False, methods=['patch'], url_path=r'cart/items/(?P<item_id>[0-9]+)')
+    @transaction.atomic
     def cart_update_item(self, request, item_id=None):
-        trx = TransaksiPenjualan.objects.filter(
-            user=request.user, status="DRAFT"
-        ).first()
-        if not trx:
-            return Response({"detail": "Keranjang kosong."}, status=400)
-
-        item = trx.detail.filter(id=item_id).first()
-        if not item:
-            return Response({"detail": "Item tidak ditemukan."}, status=404)
-
-        ser = DetailTransaksiSerializer(item, data=request.data, partial=True)
+        item = get_object_or_404(DetailTransaksi, pk=item_id, transaksi__user=request.user, transaksi__status='DRAFT')
+        trx = owned_draft(item.transaksi_id, request.user)
+        ser = DetailTransaksiSerializer(item, data=request.data, partial=True, context={'request': request})
         ser.is_valid(raise_exception=True)
-        ser.save()
-
-        self._recalc_total(trx)
+        save_item(trx, ser.validated_data.get('obat', item.obat), ser.validated_data.get('jumlah', item.jumlah), item=item)
+        trx.refresh_from_db()
         return Response(self.get_serializer(trx).data)
 
-    # ===== DELETE ITEM CART =====
-    @action(detail=False, methods=["delete"], url_path=r"cart/items/(?P<item_id>[^/.]+)")
+    @cart_update_item.mapping.delete
+    @transaction.atomic
     def cart_delete_item(self, request, item_id=None):
-        trx = TransaksiPenjualan.objects.filter(
-            user=request.user, status="DRAFT"
-        ).first()
-        if not trx:
-            return Response({"detail": "Keranjang kosong."}, status=400)
-
-        item = trx.detail.filter(id=item_id).first()
-        if not item:
-            return Response({"detail": "Item tidak ditemukan."}, status=404)
-
+        item = get_object_or_404(DetailTransaksi, pk=item_id, transaksi__user=request.user, transaksi__status='DRAFT')
+        trx = owned_draft(item.transaksi_id, request.user)
         item.delete()
-        self._recalc_total(trx)
+        recalc(trx)
         return Response(self.get_serializer(trx).data)
 
-    # ===== CHECKOUT =====
-    @action(detail=False, methods=["POST"], url_path="cart/checkout")
+    @action(detail=False, methods=['POST'], url_path='cart/checkout')
     def cart_checkout(self, request):
-        trx = TransaksiPenjualan.objects.filter(
-            user=request.user, status="DRAFT"
-        ).first()
-        if not trx or trx.detail.count() == 0:
-            return Response({"detail": "Keranjang kosong."}, status=400)
+        trx = self.get_queryset().filter(status='DRAFT').first()
+        if not trx:
+            raise ValidationError('Keranjang kosong.')
+        return Response(self.get_serializer(checkout(trx.pk, request.user)).data)
 
-        with transaction.atomic():
-            for item in trx.detail.select_related("obat").all():
-                if item.obat.stok < item.jumlah:
-                    return Response(
-                        {"detail": f"Stok tidak cukup untuk {item.obat.nama_obat}."},
-                        status=400
-                    )
-                item.obat.stok -= item.jumlah
-                item.obat.save(update_fields=["stok"])
-
-            self._recalc_total(trx)
-            trx.status = "PENDING"
-            trx.save(update_fields=["status"])
-
-        return Response(self.get_serializer(trx).data)
-
-    # ===== PAY =====
-    @action(detail=True, methods=["POST"], url_path="pay")
+    @action(detail=True, methods=['POST'], url_path='pay')
     def pay(self, request, pk=None):
         trx = self.get_object()
-        if trx.status != "PENDING":
-            return Response(
-                {"detail": "Transaksi harus PENDING untuk dibayar."},
-                status=400
-            )
-
-        trx.status = "PAID"
-        trx.save(update_fields=["status"])
-        return Response(self.get_serializer(trx).data)
-
-
+        return Response(self.get_serializer(pay_transaction(trx.pk, request.user)).data)

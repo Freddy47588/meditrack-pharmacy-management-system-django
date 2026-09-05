@@ -25,7 +25,7 @@ class ObatSerializer(serializers.ModelSerializer):
 
 
 class DetailTransaksiSerializer(serializers.ModelSerializer):
-    jumlah = serializers.IntegerField(min_value=0)
+    jumlah = serializers.IntegerField(min_value=1)
     # ✅ input harus bisa kirim id obat
     obat = serializers.PrimaryKeyRelatedField(queryset=Obat.objects.all())
 
@@ -39,6 +39,14 @@ class DetailTransaksiSerializer(serializers.ModelSerializer):
         read_only_fields = ["subtotal"]
 
     def validate(self, attrs):
+        trx = attrs.get('transaksi', getattr(self.instance, 'transaksi', None))
+        request = self.context.get('request')
+        if trx and request and trx.user_id != request.user.pk:
+            raise serializers.ValidationError({'transaksi': 'Transaksi tidak tersedia.'})
+        if self.instance and trx.pk != self.instance.transaksi_id:
+            raise serializers.ValidationError({'transaksi': 'Transaksi item tidak dapat dipindahkan.'})
+        if trx and trx.status != 'DRAFT':
+            raise serializers.ValidationError('Hanya transaksi DRAFT dapat diubah.')
         obat = attrs.get("obat")
         jumlah = attrs.get("jumlah", 0)
         if obat and jumlah and obat.stok < jumlah:
@@ -70,4 +78,4 @@ class TransaksiSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransaksiPenjualan
         fields = "__all__"
-        read_only_fields = ["user", "total_harga", "tanggal"]
+        read_only_fields = ["user", "total_harga", "tanggal", "status"]
