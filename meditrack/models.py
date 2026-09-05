@@ -1,5 +1,8 @@
 from django.conf import settings
 from django.db import models
+from django.core.validators import MinValueValidator
+from django.utils import timezone
+from datetime import timedelta
 
 
 # ================================
@@ -39,21 +42,39 @@ class Obat(models.Model):
     nama_obat = models.CharField(max_length=150)
     kategori = models.ForeignKey(
         KategoriObat,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="obat"
     )
     supplier = models.ForeignKey(
         Supplier,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="obat_supplier"
     )
-    harga = models.DecimalField(max_digits=12, decimal_places=2)
+    harga = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     stok = models.PositiveIntegerField()
+    expiry_date = models.DateField(null=True, blank=True)
+    minimum_stock = models.PositiveIntegerField(default=5)
     tanggal_masuk = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        constraints = [models.CheckConstraint(check=models.Q(harga__gte=0), name='obat_nonnegative_price')]
         verbose_name = "Obat"
         verbose_name_plural = "Obat"
+
+    @property
+    def stock_status(self):
+        if self.stok == 0:
+            return 'empty'
+        return 'low' if self.stok <= self.minimum_stock else 'safe'
+
+    @property
+    def expiry_status(self):
+        if not self.expiry_date:
+            return 'unknown'
+        today = timezone.localdate()
+        if self.expiry_date < today:
+            return 'expired'
+        return 'near_expiry' if self.expiry_date <= today + timedelta(days=30) else 'safe'
 
     def __str__(self):
         return self.nama_obat
@@ -93,15 +114,36 @@ class DetailTransaksi(models.Model):
     )
     obat = models.ForeignKey(
         Obat,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="detail_transaksi"
     )
-    jumlah = models.PositiveIntegerField()
+    jumlah = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
+        constraints = [models.CheckConstraint(check=models.Q(jumlah__gt=0), name='detail_positive_quantity')]
         verbose_name = "Detail Transaksi"
         verbose_name_plural = "Detail Transaksi"
 
     def __str__(self):
         return f"{self.obat.nama_obat} x {self.jumlah}"
+
+
+class StockMovement(models.Model):
+    TYPES = [('IN', 'Restock'), ('SALE', 'Penjualan'), ('ADJUSTMENT', 'Penyesuaian'), ('RETURN', 'Pengembalian')]
+    obat = models.ForeignKey(Obat, on_delete=models.PROTECT, related_name='stock_movements')
+    tipe = models.CharField(max_length=12, choices=TYPES)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    stock_before = models.PositiveIntegerField()
+    stock_after = models.PositiveIntegerField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    reference = models.CharField(max_length=100, blank=True)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-timestamp', '-pk']
+        constraints = [models.CheckConstraint(check=models.Q(quantity__gt=0), name='movement_positive_quantity')]
+
+    def __str__(self):
+        return f'{self.obat} / {self.tipe} / {self.quantity}'

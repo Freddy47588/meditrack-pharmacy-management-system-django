@@ -127,7 +127,7 @@ class CatalogTests(APIData):
         pk = response.data['id']
         self.assertEqual(set(response.data), {
             'id', 'nama_obat', 'kategori', 'supplier', 'harga', 'stok',
-            'tanggal_masuk', 'kategori_nama', 'supplier_nama',
+            'tanggal_masuk', 'kategori_nama', 'supplier_nama', 'expiry_date', 'minimum_stock', 'stock_status', 'expiry_status',
         })
         self.assertEqual(response.data['kategori_nama'], 'Analgesik')
         self.assertEqual(response.data['supplier_nama'], 'Supplier Test')
@@ -144,9 +144,9 @@ class CatalogTests(APIData):
         self.assertEqual(obat.nama_obat, 'Vitamin C')
         self.assertEqual(obat.harga, Decimal('6000.75'))
         self.assertEqual(obat.stok, 8)
-        self.assertEqual(self.client.delete(path).status_code, 204)
-        self.assertFalse(Obat.objects.filter(pk=pk).exists())
-        self.assertEqual(self.client.get(path).status_code, 404)
+        # Stock audit history protects products from deletion.
+        self.assertEqual(self.client.delete(path).status_code, 400)
+        self.assertTrue(Obat.objects.filter(pk=pk).exists())
 
     def test_supplier_and_kategori_crud(self):
         cases = [

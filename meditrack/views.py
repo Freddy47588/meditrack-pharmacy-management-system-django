@@ -41,7 +41,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, F, Q
+from django.db.models.deletion import ProtectedError
+from django.utils import timezone
+from datetime import timedelta
+from .forms import RestockForm
+from .services import restock, record_adjustment
 
 
 # =====================================================
@@ -71,7 +76,11 @@ class SearchListMixin:
 
 class DeleteMessageMixin:
     def form_valid(self, form):
-        response = super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+        except ProtectedError:
+            messages.error(self.request, 'Data masih digunakan. Hapus relasi katalog yang tidak dipakai; riwayat transaksi dan stok tetap dilindungi.')
+            return redirect(self.success_url)
         messages.success(self.request, 'Data berhasil dihapus.')
         return response
 
@@ -83,7 +92,7 @@ class HomeView(LoginRequiredMixin, View):
             "total_supplier": Supplier.objects.count(),
             "total_kategori": KategoriObat.objects.count(),
             "total_transaksi": TransaksiPenjualan.objects.filter(user=request.user).count(),
-            "obat_stok_rendah": Obat.objects.filter(stok__lte=5),
+            "obat_stok_rendah": Obat.objects.filter(Q(stok__lte=F('minimum_stock')) | Q(expiry_date__lte=timezone.localdate() + timedelta(days=30))).order_by('stok', 'pk'),
         }
         return render(request, "meditrack/home.html", context)
 
@@ -100,12 +109,58 @@ class ObatListView(SearchListMixin, ListView):
     context_object_name = "obat_list"
 
 
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('kategori', 'supplier')
+        filters = {
+            'low': {'stok__gt': 0, 'stok__lte': F('minimum_stock')},
+            'empty': {'stok': 0},
+            'expired': {'expiry_date__lt': timezone.localdate()},
+            'near_expiry': {'expiry_date__gte': timezone.localdate(), 'expiry_date__lte': timezone.localdate() + timedelta(days=30)},
+        }
+        return qs.filter(**filters.get(self.request.GET.get('inventory'), {}))
+
+
 class ObatDetailView(DetailView):
     model = Obat
     template_name = "meditrack/obat_detail.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['movements'] = self.object.stock_movements.select_related('user')[:50] if self.request.user.is_staff else []
+        return context
 
-class ObatCreateView(StaffMixin, CreateView):
+
+
+class InventorySaveMixin:
+    @transaction.atomic
+    def form_valid(self, form):
+        before = Obat.objects.select_for_update().get(pk=form.instance.pk).stok if form.instance.pk else 0
+        response = super().form_valid(form)
+        record_adjustment(self.object, before, self.request.user)
+        if self.object.stock_status != 'safe':
+            messages.warning(self.request, 'Stok obat berada pada atau di bawah batas minimum.')
+        return response
+
+
+class RestockView(StaffMixin, View):
+    def get(self, request, pk):
+        obat = get_object_or_404(Obat, pk=pk)
+        return render(request, 'meditrack/restock.html', {'object': obat, 'form': RestockForm()})
+
+    def post(self, request, pk):
+        obat = get_object_or_404(Obat, pk=pk)
+        form = RestockForm(request.POST)
+        if form.is_valid():
+            try:
+                restock(pk, form.cleaned_data['quantity'], request.user, form.cleaned_data['note'])
+                messages.success(request, 'Restock berhasil dicatat.')
+                return redirect('obat-detail', pk=pk)
+            except ValidationError as exc:
+                form.add_error(None, str(exc.detail))
+        return render(request, 'meditrack/restock.html', {'object': obat, 'form': form})
+
+
+class ObatCreateView(StaffMixin, InventorySaveMixin, CreateView):
     model = Obat
     form_class = ObatForm
     template_name = "meditrack/obat_form.html"
@@ -116,7 +171,7 @@ class ObatCreateView(StaffMixin, CreateView):
         return super().form_valid(form)
 
 
-class ObatUpdateView(StaffMixin, UpdateView):
+class ObatUpdateView(StaffMixin, InventorySaveMixin, UpdateView):
     model = Obat
     form_class = ObatForm
     template_name = "meditrack/obat_form.html"
@@ -307,10 +362,31 @@ class TransaksiPayView(LoginRequiredMixin, View):
         return redirect('transaksi-detail', pk=pk)
 
 
-class ObatViewSet(viewsets.ModelViewSet):
+class ProtectedDeleteMixin:
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+        except ProtectedError:
+            raise ValidationError('Data masih dirujuk oleh katalog atau riwayat transaksi/stok.')
+
+
+class ObatViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     queryset = Obat.objects.select_related("kategori", "supplier").all().order_by("-tanggal_masuk")
     serializer_class = ObatSerializer
     permission_classes = [StaffOrReadOnly]
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        obat = serializer.save()
+        record_adjustment(obat, 0, self.request.user, 'Stok awal katalog')
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        locked = Obat.objects.select_for_update().get(pk=serializer.instance.pk)
+        before = locked.stok
+        serializer.instance = locked
+        obat = serializer.save()
+        record_adjustment(obat, before, self.request.user)
 
     # Search + Ordering untuk feel ecommerce
     filter_backends = [SearchFilter, OrderingFilter]
@@ -318,13 +394,13 @@ class ObatViewSet(viewsets.ModelViewSet):
     ordering_fields = ["nama_obat", "harga", "stok", "tanggal_masuk"]
 
 
-class SupplierViewSet(viewsets.ModelViewSet):
+class SupplierViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     queryset = Supplier.objects.all().order_by("nama_supplier")
     serializer_class = SupplierSerializer
     permission_classes = [StaffOrReadOnly]
 
 
-class KategoriViewSet(viewsets.ModelViewSet):
+class KategoriViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     queryset = KategoriObat.objects.all().order_by("nama_kategori")
     serializer_class = KategoriSerializer
     permission_classes = [StaffOrReadOnly]

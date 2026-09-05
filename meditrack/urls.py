@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from .views import TransaksiPayView
+from .views import TransaksiPayView, RestockView
 from .views import (
     ObatListView, ObatDetailView, ObatCreateView, ObatUpdateView, ObatDeleteView,
     SupplierListView, SupplierDetailView, SupplierCreateView, SupplierUpdateView, SupplierDeleteView,
@@ -9,6 +9,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path('obat/<int:pk>/restock/', RestockView.as_view(), name='obat-restock'),
     path('login/', LoginView.as_view(template_name='meditrack/login.html'), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('transaksi/<int:pk>/pay/', TransaksiPayView.as_view(), name='transaksi-pay'),
