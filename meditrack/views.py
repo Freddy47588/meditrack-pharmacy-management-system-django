@@ -48,6 +48,34 @@ from django.db.models import Sum
 # HOME DASHBOARD
 # =====================================================
 
+class SearchListMixin:
+    paginate_by = 12
+    search_field = ''
+    sort_fields = ()
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        query = self.request.GET.get('q', '').strip()
+        if query and self.search_field:
+            qs = qs.filter(**{self.search_field + '__icontains': query})
+        ordering = self.request.GET.get('sort', '')
+        return qs.order_by(ordering if ordering in self.sort_fields else '-pk')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop('page', None)
+        context['query_params'] = params.urlencode()
+        return context
+
+
+class DeleteMessageMixin:
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'Data berhasil dihapus.')
+        return response
+
+
 class HomeView(LoginRequiredMixin, View):
     def get(self, request):
         context = {
@@ -64,7 +92,9 @@ class HomeView(LoginRequiredMixin, View):
 # O B A T
 # =====================================================
 
-class ObatListView(ListView):
+class ObatListView(SearchListMixin, ListView):
+    search_field = 'nama_obat'
+    sort_fields = ('nama_obat', '-nama_obat')
     model = Obat
     template_name = "meditrack/obat_list.html"
     context_object_name = "obat_list"
@@ -99,7 +129,7 @@ class ObatUpdateView(StaffMixin, UpdateView):
     
 
 
-class ObatDeleteView(StaffMixin, DeleteView):
+class ObatDeleteView(StaffMixin, DeleteMessageMixin, DeleteView):
     model = Obat
     template_name = "meditrack/obat_confirm_delete.html"
     success_url = reverse_lazy("obat-list")
@@ -109,7 +139,9 @@ class ObatDeleteView(StaffMixin, DeleteView):
 # S U P P L I E R
 # =====================================================
 
-class SupplierListView(ListView):
+class SupplierListView(SearchListMixin, ListView):
+    search_field = 'nama_supplier'
+    sort_fields = ('nama_supplier', '-nama_supplier')
     model = Supplier
     template_name = "meditrack/supplier_list.html"
     context_object_name = "supplier_list"
@@ -145,7 +177,7 @@ class SupplierUpdateView(StaffMixin, UpdateView):
 
 
 
-class SupplierDeleteView(StaffMixin, DeleteView):
+class SupplierDeleteView(StaffMixin, DeleteMessageMixin, DeleteView):
     model = Supplier
     template_name = "meditrack/supplier_confirm_delete.html"
     success_url = reverse_lazy("supplier-list")
@@ -155,7 +187,9 @@ class SupplierDeleteView(StaffMixin, DeleteView):
 # K A T E G O R I
 # =====================================================
 
-class KategoriListView(ListView):
+class KategoriListView(SearchListMixin, ListView):
+    search_field = 'nama_kategori'
+    sort_fields = ('nama_kategori', '-nama_kategori')
     model = KategoriObat
     template_name = "meditrack/kategori_list.html"
     context_object_name = "kategori_list"
@@ -185,7 +219,7 @@ class KategoriUpdateView(StaffMixin, UpdateView):
         return super().form_valid(form)
 
 
-class KategoriDeleteView(StaffMixin, DeleteView):
+class KategoriDeleteView(StaffMixin, DeleteMessageMixin, DeleteView):
     model = KategoriObat
     template_name = "meditrack/kategori_confirm_delete.html"
     success_url = reverse_lazy("kategori-list")
@@ -195,7 +229,15 @@ class KategoriDeleteView(StaffMixin, DeleteView):
 # T R A N S A K S I
 # =====================================================
 
-class TransaksiListView(OwnedMixin, ListView):
+class TransaksiListView(OwnedMixin, SearchListMixin, ListView):
+    search_field = 'id'
+    sort_fields = ('tanggal', '-tanggal', 'total_harga', '-total_harga')
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        state = self.request.GET.get('status')
+        return qs.filter(status=state) if state in dict(TransaksiPenjualan.STATUS_CHOICES) else qs
+
     model = TransaksiPenjualan
     template_name = "meditrack/transaksi_list.html"
     context_object_name = "transaksi_list"
