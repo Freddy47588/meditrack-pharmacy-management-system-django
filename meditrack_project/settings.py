@@ -66,8 +66,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Meditrack API",
-    "DESCRIPTION": "API untuk UAS Framework Programming & Sistem Terdistribusi (Decoupled Architecture).",
+    "TITLE": "MediTrack API",
+    "DESCRIPTION": "API manajemen obat, kategori, supplier, dan transaksi penjualan berbasis keranjang. Endpoint terproteksi menggunakan Token Authentication.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
