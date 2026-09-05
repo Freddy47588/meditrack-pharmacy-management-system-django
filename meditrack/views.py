@@ -41,7 +41,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db import transaction
-from django.db.models import Sum, F, Q
+from django.db.models import Sum, F, Q, Count
+from django.db.models.functions import TruncDate
 from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from datetime import timedelta
@@ -87,12 +88,34 @@ class DeleteMessageMixin:
 
 class HomeView(LoginRequiredMixin, View):
     def get(self, request):
+        today = timezone.localdate()
+        start = today - timedelta(days=6)
+        inventory = Obat.objects.aggregate(
+            total_obat=Count('pk'),
+            low_stock=Count('pk', filter=Q(stok__gt=0, stok__lte=F('minimum_stock'))),
+            out_of_stock=Count('pk', filter=Q(stok=0)),
+            near_expiry=Count('pk', filter=Q(expiry_date__gte=today, expiry_date__lte=today+timedelta(days=30))),
+            expired=Count('pk', filter=Q(expiry_date__lt=today)),
+        )
+        own = TransaksiPenjualan.objects.filter(user=request.user)
+        paid = own.filter(status='PAID')
+        sales = dict(paid.filter(tanggal__date__gte=start, tanggal__date__lte=today)
+            .annotate(day=TruncDate('tanggal')).values('day').annotate(total=Sum('total_harga')).values_list('day', 'total'))
+        days = [start + timedelta(days=i) for i in range(7)]
         context = {
-            "total_obat": Obat.objects.count(),
-            "total_supplier": Supplier.objects.count(),
-            "total_kategori": KategoriObat.objects.count(),
-            "total_transaksi": TransaksiPenjualan.objects.filter(user=request.user).count(),
-            "obat_stok_rendah": Obat.objects.filter(Q(stok__lte=F('minimum_stock')) | Q(expiry_date__lte=timezone.localdate() + timedelta(days=30))).order_by('stok', 'pk'),
+            **inventory,
+            'total_supplier': Supplier.objects.count(),
+            'total_kategori': KategoriObat.objects.count(),
+            'transactions_today': own.filter(tanggal__date=today).exclude(status='DRAFT').count(),
+            'sales_today': paid.filter(tanggal__date=today).aggregate(total=Sum('total_harga'))['total'] or 0,
+            'recent_transactions': own.exclude(status='DRAFT').select_related('user').order_by('-tanggal', '-pk')[:5],
+            'top_products': DetailTransaksi.objects.filter(transaksi__in=paid)
+                .values('obat_id', 'obat__nama_obat').annotate(quantity=Sum('jumlah'), revenue=Sum('subtotal')).order_by('-quantity', 'obat_id')[:5],
+            'inventory_alerts': Obat.objects.filter(Q(stok__lte=F('minimum_stock')) | Q(expiry_date__lte=today+timedelta(days=30))).order_by('stok', 'expiry_date', 'pk')[:10],
+            'chart_labels': [day.strftime('%d %b') for day in days],
+            'chart_values': [float(sales.get(day, 0)) for day in days],
+            'daily_sales': [(day, sales.get(day, 0)) for day in days],
+            'today': today,
         }
         return render(request, "meditrack/home.html", context)
 
