@@ -1,3 +1,33 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Detail Supplier{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Detail Supplier</h1><p class="muted">Informasi supplier dan data operasional.</p></div><div class="actions"><a class="btn" href="/supplier/">Kembali</a>{% if user.is_staff %}<a class="btn btn-primary" href="/supplier/{{ object.pk }}/edit/">Edit</a>{% endif %}</div></div><section class="panel panel-pad"><dl class="detail-grid"><div><dt>Supplier</dt><dd>{{ object.nama_supplier }}</dd></div><div><dt>Alamat</dt><dd>{{ object.alamat|truncatechars:60 }}</dd></div><div><dt>Telepon</dt><dd>{{ object.no_telepon }}</dd></div></dl></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Detail Supplier</h1>
+      <p class="muted">Informasi supplier dan data operasional.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/supplier/">Kembali</a>
+      {% if user.is_staff %}
+        <a class="btn btn-primary" href="/supplier/{{ object.pk }}/edit/">Edit</a>
+      {% endif %}
+    </div>
+  </div>
+  <section class="panel panel-pad">
+    <dl class="detail-grid">
+      <div>
+        <dt>Supplier</dt>
+        <dd>{{ object.nama_supplier }}</dd>
+      </div>
+      <div>
+        <dt>Alamat</dt>
+        <dd>{{ object.alamat|truncatechars:60 }}</dd>
+      </div>
+      <div>
+        <dt>Telepon</dt>
+        <dd>{{ object.no_telepon }}</dd>
+      </div>
+    </dl>
+  </section>
+{% endblock %}

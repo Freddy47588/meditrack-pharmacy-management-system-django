@@ -1,80 +1,66 @@
 # MediTrack
 
-Backend manajemen apotek berbasis Django REST Framework untuk mengelola obat,
-kategori, supplier, dan transaksi penjualan melalui keranjang belanja.
-Proyek ini memperlihatkan pemodelan relasi database, autentikasi token, REST API,
-dan automated testing dalam satu aplikasi Django.
+Aplikasi manajemen inventory apotek dan penjualan berbasis **Django + Django REST
+Framework**, dengan dashboard HTML, kasir, pelacakan expiry, audit pergerakan stok,
+dan REST API berbasis Token Authentication.
 
-MediTrack dikembangkan sebagai tugas UAS **Framework Programming dan Sistem
-Terdistribusi**, dengan API yang ditujukan untuk frontend terpisah **PharmaCart**.
-Frontend tersebut tidak disertakan dalam repository ini. Repository juga memuat
-dashboard dan halaman manajemen HTML dari implementasi awal.
+Proyek portfolio akademik oleh **Fredi Irawan**, Teknik Informatika, Institut Asia
+Malang. Berawal dari tugas Framework Programming dan Sistem Terdistribusi;
+sekarang mencakup alur operasional apotek dari restock hingga simulasi pembayaran.
+Frontend terpisah PharmaCart tidak disertakan; dashboard Django dapat dipakai
+langsung. Aplikasi ini ditujukan untuk demonstrasi lokal, belum production-ready.
 
-Proyek ini merupakan portfolio akademik; lihat [Known Limitations](#known-limitations)
-untuk batasan implementasi yang masih perlu ditangani sebelum deployment publik.
+![Dashboard MediTrack dengan data demo](docs/screenshots/dashboard.png)
 
-## Features
+## Fitur
 
-- Registrasi akun dan login menggunakan token Django REST Framework.
-- CRUD obat, kategori obat, dan supplier; katalog dapat dibaca tanpa login.
-- Pencarian obat berdasarkan nama, kategori, atau supplier serta pengurutan
-  berdasarkan nama, harga, stok, atau tanggal masuk.
-- Keranjang berstatus `DRAFT`, penambahan dan penghapusan item, serta perhitungan
-  subtotal dan total harga.
-- Checkout mengubah status menjadi `PENDING` dan mengurangi stok; action `pay`
-  menandai transaksi sebagai `PAID`. Ini adalah simulasi status pembayaran,
-  belum terintegrasi payment gateway.
-- Daftar transaksi milik pengguna dan riwayat pesanan selain `DRAFT`.
-- Dashboard HTML dengan jumlah obat, supplier, kategori, transaksi, dan daftar
-  obat dengan stok paling banyak lima; Django admin untuk kelima model.
-- Dokumentasi Swagger/OpenAPI dan 42 automated tests.
+- **Inventory:** CRUD obat, kategori, supplier; search, sorting, pagination, dan
+  filter stok/expiry. Harga memakai Decimal dan stok tidak boleh negatif.
+- **Expiry:** tanggal opsional, status expired / near expiry / safe / unknown;
+  near expiry mencakup hari ini sampai 30 hari ke depan. Obat expired ditolak
+  ketika dimasukkan ke transaksi maupun saat checkout.
+- **Minimum stock:** batas per obat, default 5; stok 0 berarti habis, stok positif
+  sampai batas minimum berarti rendah, selebihnya aman.
+- **Audit stok:** model `StockMovement` mencatat quantity, stok sebelum/sesudah,
+  waktu, pengguna, referensi, dan catatan. `SALE` otomatis saat checkout/kasir,
+  `IN` saat restock, `ADJUSTMENT` saat stok diedit melalui HTML, API, atau admin.
+  `RETURN` tersedia sebagai tipe model; flow retur belum tersedia.
+- **Kasir staff:** formset dengan penambahan baris, preview subtotal/total,
+  validasi server, checkout atomic, serta detail dan simulasi pembayaran.
+- **Transaksi:** `DRAFT -> PENDING -> PAID`; detail/total dihitung server,
+  stok dikurangi saat checkout, seluruh perubahan di-rollback jika satu item gagal.
+- **Authorization:** katalog dapat dibaca publik; management hanya staff/admin.
+  Transaksi dan detail hanya dapat diakses pemilik, termasuk untuk akun staff.
+- **Dashboard:** total obat, stok rendah/habis, near expiry, transaksi dan penjualan
+  hari ini, chart tujuh hari, top 5 obat terjual, transaksi terbaru, inventory alerts.
+- **UI:** shared base template, sidebar, menu mobile, active navigation, flash
+  messages, tabel dengan scroll horizontal, halaman login dan logout POST.
+- **Dokumentasi:** Swagger/OpenAPI dengan request/response custom actions;
+  seed demo aman dan **83 automated tests**.
 
-## Tech Stack
+## Tech stack
 
 | Komponen | Implementasi |
 | --- | --- |
 | Runtime | Python 3.11 |
-| Web framework | Django 4.2.7 |
-| REST API | Django REST Framework 3.14.0, TokenAuthentication |
+| Backend | Django 4.2.7, Django REST Framework 3.14.0 |
 | Database | SQLite |
-| API documentation | drf-spectacular 0.27.1 / Swagger UI |
-| Environment configuration | python-dotenv 1.0.0 |
-| HTML UI | Django templates, Tailwind CSS melalui CDN |
-| Testing | Django test runner dan DRF APITestCase |
+| Authentication | DRF TokenAuthentication untuk API; Django session untuk HTML |
+| UI | Django templates, Tailwind CSS CDN, stylesheet lokal, JavaScript ringan |
+| Chart | Chart.js 4.4.7 melalui CDN; data JSON dari Django |
+| API docs | drf-spectacular 0.27.1 / Swagger UI |
+| Configuration | python-dotenv, environment variables |
+| Tests | Django test runner, DRF APITestCase |
 
-Versi dependency tercantum dalam [requirements.txt](requirements.txt).
-`django-filter` dan `django-cors-headers` tercantum sebagai dependency, tetapi
-belum diaktifkan pada konfigurasi aplikasi. Search dan ordering menggunakan
-filter bawaan DRF.
+Dependency aplikasi tetap tercantum dalam [requirements.txt](requirements.txt).
+`django-filter` dan `django-cors-headers` masih merupakan dependency awal yang
+belum diaktifkan; search/ordering API menggunakan filter bawaan DRF.
+Playwright yang digunakan untuk verifikasi screenshot bukan dependency runtime.
+Lihat batasan versi dependency pada bagian Known Limitations sebelum deployment.
 
-## Project Structure
+## Menjalankan aplikasi
 
-```text
-meditrack-pharmacy-management-system-django/
-├── meditrack/
-│   ├── models.py             # Kategori, supplier, obat, transaksi, detail
-│   ├── serializers.py        # Representasi dan validasi API
-│   ├── views.py              # Viewset API dan view HTML legacy
-│   ├── auth_api.py           # Registrasi pengguna
-│   ├── api_urls.py           # Router API
-│   ├── urls.py               # URL HTML
-│   ├── forms.py
-│   ├── migrations/
-│   ├── templates/
-│   └── tests/                # Model, API, form, URL, settings
-├── meditrack_project/        # Settings dan URL utama Django
-├── .env.example
-├── .gitignore
-├── manage.py
-├── requirements.txt
-└── README.md
-```
-
-## Installation
-
-Prasyarat: Git dan Python 3.11 beserta pip. Jalankan perintah berikut dari terminal.
-
-### 1. Clone repository
+Prasyarat: Python 3.11, pip, dan Git.
 
 ```bash
 git clone https://github.com/Freddy47588/meditrack-pharmacy-management-system-django.git
@@ -82,183 +68,244 @@ cd meditrack-pharmacy-management-system-django
 python -m venv .venv
 ```
 
-### 2. Aktifkan virtual environment
-
-Windows PowerShell:
+Aktifkan virtual environment:
 
 ```powershell
+# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows Command Prompt:
-
-```bat
-.venv\Scripts\activate.bat
-```
-
-macOS / Linux:
-
 ```bash
+# macOS / Linux
 source .venv/bin/activate
 ```
 
-### 3. Install dependency dan siapkan environment
+Install dependency dan salin environment:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-Salin contoh konfigurasi dengan `Copy-Item .env.example .env` di PowerShell,
-`copy .env.example .env` di Command Prompt, atau `cp .env.example .env` di
-macOS/Linux. Isi key pribadi menggunakan output perintah berikut:
+PowerShell: `Copy-Item .env.example .env`. macOS/Linux: `cp .env.example .env`.
+Buat key pribadi, lalu simpan output dalam tanda kutip di `DJANGO_SECRET_KEY`
+pada `.env` agar session bertahan setelah proses restart:
 
 ```bash
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
-Simpan output dalam tanda kutip pada `DJANGO_SECRET_KEY` di `.env`; jangan commit
-key atau file `.env`. Lihat [Environment Variables](#environment-variables)
-untuk perilaku default.
-
-### 4. Siapkan database dan jalankan server
-
-```bash
 python manage.py migrate
-python manage.py check
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Buka dashboard di <http://127.0.0.1:8000/> atau Swagger UI di
-<http://127.0.0.1:8000/api/docs/>. Database hasil migrasi awal belum berisi data
-aplikasi. Untuk mengisi data lewat `/admin/`, buat akun admin terlebih dahulu:
+Masuk melalui [login lokal](http://127.0.0.1:8000/login/) dengan akun yang dibuat.
+Dashboard: [halaman utama](http://127.0.0.1:8000/).
+Staff dapat mengelola katalog, kasir, dan restock. Superuser juga dapat memberikan
+flag `is_staff` melalui Django admin; tidak ada role system tambahan.
+
+Untuk database lama, migrasi `0003` menambah field nullable/default tanpa menghapus
+history. Migrasi menolak data lama dengan jumlah item nol/negatif atau harga
+negatif, dengan pesan untuk memperbaikinya terlebih dahulu. Back up database
+sebelum migrasi; riwayat stok sebelum upgrade tidak dibuat-buat.
+
+## Demo data
+
+Jalankan pada **database development kosong**:
 
 ```bash
-python manage.py createsuperuser
+python manage.py migrate
+python manage.py seed_demo
+python manage.py changepassword demo-pharmacist
+python manage.py runserver
 ```
 
-## Running Tests
+Seed membuat 3 kategori, 2 supplier fiktif, 14 obat dengan stok dan expiry bervariasi,
+7 transaksi PAID dalam tujuh hari, 1 transaksi PENDING, serta audit stok.
+Akun `demo-pharmacist` adalah staff dengan **password tidak dapat digunakan**
+sampai Anda mengatur password pribadi. Tidak ada default password atau token.
 
-Dengan virtual environment aktif dan dependency terpasang, jalankan dari root:
+Seed repeatable: jika dataset demo sudah ada, command berhenti tanpa perubahan,
+tanpa reset stok atau duplikasi transaksi. Command menolak `DEBUG=false` maupun
+database non-demo yang sudah berisi data. Untuk menghindari perubahan database
+kerja yang sudah ada, pakai path database demo terpisah pada terminal yang sama:
+
+```powershell
+$env:DJANGO_DB_PATH = Join-Path $env:TEMP 'meditrack-demo.sqlite3'
+python manage.py migrate
+python manage.py seed_demo
+python manage.py changepassword demo-pharmacist
+python manage.py runserver
+```
 
 ```bash
-python manage.py check
-python manage.py test
+# macOS / Linux
+export DJANGO_DB_PATH=/tmp/meditrack-demo.sqlite3
 ```
 
-Tersedia **42 test**: 7 model, 25 API, 2 form, 5 URL/Swagger, dan 3 konfigurasi.
-Cakupannya mencakup CRUD, relasi dan constraint, register/login, permission,
-isolasi transaksi per pengguna, perhitungan subtotal, validasi stok,
-checkout, pembayaran, dan riwayat pesanan.
+Untuk kembali ke database default setelah server berhenti:
+`Remove-Item Env:DJANGO_DB_PATH` (PowerShell) atau `unset DJANGO_DB_PATH`.
+Dataset lama tidak digeser tanggalnya saat seed diulang; gunakan database demo
+baru jika ingin demo tanggal terkini. Seluruh file SQLite diabaikan Git.
 
-Django membuat database SQLite test **di memori**, menjalankan migrasi, dan
-membersihkannya setelah pengujian. Semua data dibuat saat test berjalan;
-`db.sqlite3`, server development, dan layanan eksternal tidak diperlukan.
-Suite ini adalah baseline dan belum mencakup semua masalah pada
-[Known Limitations](#known-limitations).
+## Alur penggunaan
 
-## API Documentation
+1. Buat kategori dan supplier, lalu obat dengan harga, minimum stock dan expiry.
+2. Buka detail obat untuk **Restock** atau melihat 50 pergerakan stok terakhir.
+3. Buka **Kasir**, pilih obat dan jumlah. Baris kosong tambahan boleh diabaikan.
+4. Klik **Checkout**. Server memeriksa harga/expiry/stok, mencatat SALE dan
+   menghasilkan transaksi PENDING secara atomic.
+5. Di detail transaksi, pilih **Simulasikan pembayaran** untuk menjadi PAID.
+6. Lihat laporan dashboard dan daftar transaksi akun Anda.
 
-- Swagger UI: <http://127.0.0.1:8000/api/docs/>
-- OpenAPI schema: <http://127.0.0.1:8000/api/schema/>
+Preview kasir adalah estimasi; harga saat checkout menjadi nilai final. Perubahan
+harga katalog setelah checkout tidak mengubah subtotal atau harga satuan historis.
+Transaksi PENDING/PAID tidak dapat diedit atau dihapus melalui CRUD. Penghapusan
+DRAFT tidak menambah stok karena stoknya belum dikurangi. Produk yang dirujuk
+history transaksi/stok, serta kategori/supplier yang masih digunakan, dilindungi
+dari penghapusan. Admin melihat transaksi, detail, dan audit stok secara read-only.
 
-Kedua route dokumentasi dapat diakses tanpa login. Swagger UI memuat aset dari
-CDN sehingga tampilan interaktifnya memerlukan koneksi internet. Schema otomatis
-belum mendeskripsikan seluruh custom action secara akurat; lihat batasan di bawah.
+## API
 
-Untuk request terproteksi, register melalui `/api/auth/register/` dengan field
-`username`, `password`, dan `password2`, lalu login melalui `/api/auth/token/`
-dengan `username` dan `password`. Gunakan nilai `token` dari respons login pada
-header berikut; placeholder ini bukan token aktif:
+- [Swagger UI](http://127.0.0.1:8000/api/docs/)
+- [OpenAPI schema](http://127.0.0.1:8000/api/schema/)
+
+Kedua endpoint dokumentasi publik. Register memakai `username`, `password`,
+`password2`; validasi password mengikuti validator Django. Ambil token melalui
+login API, lalu gunakan header ini dengan token pribadi:
 
 ```http
 Authorization: Token <your-token>
 ```
 
-## API Overview
-
-Semua path menggunakan trailing slash. `{id}` dan `{item_id}` adalah ID record.
-
-| Method | Endpoint | Fungsi / akses |
+| Method | Endpoint | Perilaku |
 | --- | --- | --- |
-| POST | `/api/auth/register/` | Membuat akun; publik |
-| POST | `/api/auth/token/` | Mendapatkan token dari kredensial login; publik |
-| GET, POST | `/api/obat/` | Daftar / buat obat |
-| GET, PUT, PATCH, DELETE | `/api/obat/{id}/` | Detail / ubah / hapus obat |
-| GET, POST | `/api/kategori/`, `/api/supplier/` | Daftar / buat kategori atau supplier |
-| GET, PUT, PATCH, DELETE | `/api/kategori/{id}/`, `/api/supplier/{id}/` | Detail / ubah / hapus kategori atau supplier |
-| GET, POST | `/api/transaksi/` | Daftar transaksi sendiri / buat transaksi; login |
-| GET, PUT, PATCH, DELETE | `/api/transaksi/{id}/` | Detail / ubah / hapus transaksi sendiri; login |
-| GET | `/api/transaksi/cart/` | Ambil atau buat keranjang `DRAFT`; login |
-| POST | `/api/transaksi/cart/add/` | Tambah item dengan `obat` dan `jumlah`; login |
-| DELETE | `/api/transaksi/cart/items/{item_id}/` | Hapus item keranjang sendiri; login |
-| POST | `/api/transaksi/cart/checkout/` | Checkout keranjang; login |
-| POST | `/api/transaksi/{id}/pay/` | Tandai transaksi `PENDING` sebagai `PAID`; login |
-| GET | `/api/transaksi/my/` | Riwayat transaksi sendiri selain `DRAFT`; login |
-| GET, POST | `/api/detail-transaksi/` | Daftar / buat detail; login, lihat batasan kepemilikan |
-| GET, PUT, PATCH, DELETE | `/api/detail-transaksi/{id}/` | Detail / ubah / hapus item; login, lihat batasan kepemilikan |
+| POST | `/api/auth/register/` | Registrasi publik; akun biasa, bukan staff |
+| POST | `/api/auth/token/` | Login token |
+| GET / POST | `/api/obat/`, `/api/kategori/`, `/api/supplier/` | Baca publik / buat hanya staff |
+| GET / PUT / PATCH / DELETE | `/api/{katalog}/{id}/` | Detail publik / perubahan hanya staff |
+| GET / POST | `/api/transaksi/` | Daftar sendiri / buat atau gunakan draft sendiri |
+| GET / PUT / PATCH / DELETE | `/api/transaksi/{id}/` | Milik sendiri; hanya DRAFT dapat diedit/dihapus |
+| GET | `/api/transaksi/cart/` | Ambil atau buat keranjang sendiri |
+| POST | `/api/transaksi/cart/add/` | Tambah `obat` dan `jumlah`; duplicate obat digabung |
+| PATCH / DELETE | `/api/transaksi/cart/items/{item_id}/` | Ganti jumlah/obat atau hapus item DRAFT sendiri |
+| POST | `/api/transaksi/cart/checkout/` | Validasi semua item, kurangi stok, status PENDING |
+| POST | `/api/transaksi/{id}/pay/` | Simulasi PENDING menjadi PAID |
+| GET | `/api/transaksi/my/` | Riwayat sendiri selain DRAFT |
+| GET / POST | `/api/detail-transaksi/` | Detail milik sendiri / tambah pada DRAFT sendiri |
+| GET / PUT / PATCH / DELETE | `/api/detail-transaksi/{id}/` | Milik sendiri; write hanya DRAFT |
 
-Pembacaan obat, kategori, dan supplier bersifat publik; penulisannya memerlukan
-login, tetapi belum dibatasi khusus untuk staff. Contoh pencarian dan pengurutan:
-`GET /api/obat/?search=paracetamol&ordering=harga`.
+Semua endpoint menggunakan trailing slash. `status`, `user`, dan total transaksi
+read-only; field tersebut tidak dapat dipakai untuk melewati checkout/pay. Item
+tidak dapat dipindahkan ke transaksi lain. Mengganti obat dengan obat yang sudah
+ada di draft ditolak; penambahan item lewat POST menggabungkan jumlahnya.
+
+Contoh search: `GET /api/obat/?search=paracetamol&ordering=harga`.
+Contoh tambah cart:
+
+```json
+{"obat": 1, "jumlah": 2}
+```
+
+ID mengikuti database Anda. Stok tidak dipesan ketika masih DRAFT. Saat checkout,
+harga dibaca kembali dan kegagalan satu item membatalkan seluruh perubahan.
+API mempertahankan response list tanpa pagination untuk kompatibilitas; pagination
+12 baris diterapkan pada daftar HTML. Login session HTML tidak menggantikan token API.
+
+## Reporting semantics
+
+Inventory bersifat global. KPI transaksi, penjualan, chart, transaksi terbaru,
+dan top selling products dibatasi pada **pemilik yang login**, termasuk staff.
+Penjualan hanya menghitung PAID, berdasarkan `tanggal` pembuatan transaksi dan
+zona waktu aplikasi (UTC); bukan timestamp pembayaran. Top 5 mencakup seluruh
+periode, chart mencakup hari ini dan enam hari sebelumnya, termasuk hari nol
+penjualan. Inventory alerts dapat tumpang tindih: satu obat bisa stok rendah
+sekaligus near expiry. Tabel data harian tersedia jika chart CDN tidak termuat.
+
+## Tests dan validation
+
+```bash
+python manage.py check
+python manage.py makemigrations --check
+python manage.py test
+python manage.py spectacular --validate --file schema.yml
+```
+
+Hasil upgrade: **83 tests passed, 0 failures, 0 errors** (baseline 42).
+Cakupan mencakup model constraints, token/registration, ownership HTML/API,
+cart PATCH/DELETE, duplicate item, status transitions, kasir, stock rollback,
+expiry boundaries, restock, stock movements, dashboard isolation, demo safety,
+pagination, CSRF, schema, dan render seluruh halaman utama.
+
+Test runner membuat database terisolasi dan membersihkannya setelah test. Tidak
+memerlukan database lokal atau server development. File schema hasil ekspor
+bersifat opsional; jangan menambahkan artifact sementara yang tidak diperlukan.
+
+Smoke test browser nyata: login, kasir, payment, menu mobile, chart, dan halaman
+`/`, `/obat/`, `/kasir/`, `/transaksi/`, `/api/docs/`. Desktop 1440 px,
+tablet 768 px, mobile 390 px; tidak ditemukan horizontal overflow pada halaman
+utama (tabel tetap dapat di-scroll), HTTP 500, atau error JavaScript.
+
+## Struktur penting
+
+```text
+meditrack/
+  models.py                 # Catalog, transactions, stock movement
+  services.py               # Shared atomic stock/cart/checkout/pay operations
+  permissions.py            # Public catalog reads, staff writes
+  views.py                  # HTML views and DRF viewsets
+  serializers.py            # API validation and schema request types
+  forms.py                  # Catalog, cashier and restock forms
+  auth_api.py               # Registration and password validation
+  management/commands/seed_demo.py
+  migrations/               # Original migration history preserved
+  templates/meditrack/       # base.html and page templates
+  static/meditrack/          # Local CSS and cashier estimates
+  tests/
+meditrack_project/           # Settings and project routing
+docs/screenshots/           # Real application captures
+```
+
+## Environment
+
+| Variable | Default | Fungsi |
+| --- | --- | --- |
+| `DJANGO_DEBUG` | `true` | Environment-based debug; seed hanya untuk development |
+| `DJANGO_SECRET_KEY` | Acak per proses saat DEBUG aktif | Isi key pribadi untuk session stabil; wajib saat DEBUG=false |
+| `DJANGO_ALLOWED_HOSTS` | Kosong | Host dipisahkan koma; contoh localhost,127.0.0.1 |
+| `DJANGO_DB_PATH` | `db.sqlite3` di root | Path SQLite alternatif, misalnya database demo terpisah |
+
+Environment sistem mengalahkan `.env`. Contoh ada pada [.env.example](.env.example).
+`.env`, database, cache, virtual environment, dan token tidak disimpan dalam Git.
 
 ## Screenshots
 
-Screenshot akan ditambahkan pada pembaruan berikutnya. Halaman yang disarankan:
-
-- `/api/docs/`: daftar endpoint dan contoh respons katalog.
-- `/`: dashboard dengan ringkasan data dan indikator stok rendah.
-- `/obat/`: daftar obat dengan kategori, harga, dan stok.
-
-Gunakan aplikasi yang benar-benar berjalan dengan data demo dan sembunyikan
-token atau data pribadi sebelum menyimpan screenshot.
-
-## Database
-
-Database SQLite lokal `db.sqlite3` tidak disimpan dalam version control.
-Jalankan migrasi setelah clone; file database development dibuat saat migrasi.
-Migration files tetap disertakan dalam repository.
-
-Model utama: `KategoriObat` dan `Supplier` berelasi dengan `Obat`;
-`TransaksiPenjualan` dimiliki pengguna dan memiliki banyak `DetailTransaksi`
-yang merujuk ke obat. Harga, subtotal, dan total menggunakan `DecimalField`.
-
-## Environment Variables
-
-Konfigurasi dimuat dari `.env` di root menggunakan python-dotenv. Environment
-sistem memiliki prioritas terhadap file tersebut. Lihat [.env.example](.env.example).
-
-| Variabel | Default tanpa konfigurasi | Keterangan |
-| --- | --- | --- |
-| `DJANGO_DEBUG` | `true` | Nilai `true`, `1`, `yes`, atau `on` mengaktifkan debug; gunakan `false` untuk deployment |
-| `DJANGO_SECRET_KEY` | Key acak per proses saat debug aktif | Isi key pribadi agar session bertahan setelah restart; wajib ketika debug dimatikan |
-| `DJANGO_ALLOWED_HOSTS` | Daftar kosong | Host dipisahkan koma; `.env.example` menyediakan `localhost,127.0.0.1` |
-
-Tanpa key dan dengan `DJANGO_DEBUG=false`, aplikasi menolak startup.
-Pengaturan ini belum merupakan konfigurasi deployment produksi yang lengkap.
+Lihat [galeri dan instruksi capture](docs/screenshots/README.md): dashboard,
+inventory, kasir, detail transaksi, Swagger, dan dashboard mobile. Semua gambar
+berasal dari aplikasi lokal dengan data fiktif; tidak ada screenshot buatan.
 
 ## Known Limitations
 
-- **Otorisasi:** CRUD detail transaksi belum memfilter pemilik; akun terautentikasi
-  dapat mengakses detail pengguna lain. View HTML legacy belum memiliki pembatasan
-  akses, dan CRUD katalog belum membedakan peran pembeli dan pengelola.
-- **Integritas transaksi:** perubahan detail lewat CRUD tidak menghitung ulang
-  total transaksi. Status dapat diubah lewat CRUD sehingga melewati checkout/pay.
-  Checkout multi-item dapat menyimpan pengurangan stok parsial saat item berikutnya
-  gagal; konsistensi stok pada request bersamaan juga belum dijamin.
-- **Routing cart:** action PATCH dan DELETE item memakai path yang sama pada dua
-  route terpisah. PATCH `/api/transaksi/cart/items/{item_id}/` tertutup oleh route
-  DELETE dan belum dapat digunakan sebagaimana dimaksud.
-- **HTML legacy:** template kasir dan form tambah transaksi belum tersedia;
-  pembuatan transaksi pada alur tersebut belum mengisi pengguna yang diwajibkan model.
-- **OpenAPI:** introspeksi otomatis belum lengkap untuk registrasi dan beberapa
-  action cart/pay; schema bukan jaminan seluruh request/response action akurat.
-
-## License
-
-Repository belum memiliki file lisensi. Pemilik proyek perlu menentukan lisensi
-sebelum menambahkan ketentuan penggunaan atau badge lisensi.
+- **Dependency lama:** pin Django 4.2.7 berasal dari project awal. Seri 4.2 telah
+  mencapai akhir extended support pada 7 April 2026
+  ([pengumuman Django](https://www.djangoproject.com/weblog/2026/apr/07/security-releases/)).
+  Upgrade dan audit dependency diperlukan sebelum deployment publik.
+- **SQLite:** atomic rollback dan conditional stock updates mencegah stok negatif,
+  tetapi SQLite tidak menyediakan row lock `select_for_update`; beban write
+  bersamaan dapat menghasilkan database locked. Belum ada load/concurrency test
+  lintas proses atau mekanisme retry otomatis.
+- **Pembayaran dan retur:** pembayaran hanya simulasi. Belum ada gateway, refund,
+  pembatalan PENDING, pelepasan stok otomatis, atau workflow RETURN.
+- **Inventory sederhana:** satu expiry per obat, belum per batch/lot atau FEFO.
+  Expiry kosong berarti unknown; tidak ada backfill audit untuk stok sebelum upgrade.
+- **Laporan:** per akun dan tanggal pembuatan transaksi, bukan laporan akuntansi
+  per waktu pembayaran atau laporan seluruh kasir.
+- **Deployment:** aset Tailwind/Chart/Swagger memakai CDN; belum ada konfigurasi
+  produksi lengkap, rate limiting login, expiry token, backup otomatis, atau CI.
+- **Audit:** jalur aplikasi/admin mencatat perubahan stok, tetapi script SQL/ORM
+  langsung di luar service dapat melewati audit. Riwayat belum tamper-evident.
+- **Lisensi:** repository belum memiliki file lisensi; keputusan lisensi tetap
+  berada pada pemilik proyek.
 
 ## Author
 
 **Fredi Irawan**  
-Teknik Informatika — Institut Asia Malang
+Teknik Informatika, Institut Asia Malang

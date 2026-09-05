@@ -1,3 +1,23 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Form Supplier{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Form Supplier</h1><p class="muted">Lengkapi informasi berikut sebelum menyimpan.</p></div><div class="actions"></div></div><section class="panel panel-pad form-panel"><form method="post">{% csrf_token %}{% include "meditrack/_fields.html" %}<div class="actions"><button class="btn btn-primary">Simpan Supplier</button><a class="btn" href="/supplier/">Batal</a></div></form></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Form Supplier</h1>
+      <p class="muted">Lengkapi informasi berikut sebelum menyimpan.</p>
+    </div>
+    <div class="actions">
+    </div>
+  </div>
+  <section class="panel panel-pad form-panel">
+    <form method="post">
+      {% csrf_token %}
+      {% include "meditrack/_fields.html" %}
+      <div class="actions">
+        <button class="btn btn-primary">Simpan Supplier</button>
+        <a class="btn" href="/supplier/">Batal</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

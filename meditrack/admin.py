@@ -1,19 +1,27 @@
 from django.contrib import admin
 from django.db import transaction
-from .models import Obat, Supplier, KategoriObat, TransaksiPenjualan, DetailTransaksi, StockMovement
+
+from .models import (
+    DetailTransaksi,
+    KategoriObat,
+    Obat,
+    StockMovement,
+    Supplier,
+    TransaksiPenjualan,
+)
 from .services import record_adjustment
 
 
 @admin.register(Obat)
 class ObatAdmin(admin.ModelAdmin):
-    list_display = ['nama_obat', 'stok', 'minimum_stock', 'expiry_date']
-    search_fields = ['nama_obat']
+    list_display = ["nama_obat", "stok", "minimum_stock", "expiry_date"]
+    search_fields = ["nama_obat"]
 
     @transaction.atomic
     def save_model(self, request, obj, form, change):
         before = Obat.objects.select_for_update().get(pk=obj.pk).stok if change else 0
         super().save_model(request, obj, form, change)
-        record_adjustment(obj, before, request.user, 'Perubahan melalui admin')
+        record_adjustment(obj, before, request.user, "Perubahan melalui admin")
 
 
 class AuditReadOnlyAdmin(admin.ModelAdmin):

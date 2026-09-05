@@ -1,3 +1,25 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Detail Kategori{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Detail Kategori</h1><p class="muted">Informasi kategori dan data operasional.</p></div><div class="actions"><a class="btn" href="/kategori/">Kembali</a>{% if user.is_staff %}<a class="btn btn-primary" href="/kategori/{{ object.pk }}/edit/">Edit</a>{% endif %}</div></div><section class="panel panel-pad"><dl class="detail-grid"><div><dt>Kategori</dt><dd>{{ object.nama_kategori }}</dd></div></dl></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Detail Kategori</h1>
+      <p class="muted">Informasi kategori dan data operasional.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/kategori/">Kembali</a>
+      {% if user.is_staff %}
+        <a class="btn btn-primary" href="/kategori/{{ object.pk }}/edit/">Edit</a>
+      {% endif %}
+    </div>
+  </div>
+  <section class="panel panel-pad">
+    <dl class="detail-grid">
+      <div>
+        <dt>Kategori</dt>
+        <dd>{{ object.nama_kategori }}</dd>
+      </div>
+    </dl>
+  </section>
+{% endblock %}

@@ -1,18 +1,189 @@
 {% extends "meditrack/base.html" %}
+{% load meditrack_tags %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="page-header"><div><span class="eyebrow">Overview / {{ today|date:"d F Y" }}</span><h1>Dashboard apotek</h1><p class="muted">Pantau persediaan dan aktivitas penjualan akun Anda.</p></div><div class="actions"><a class="btn" href="/obat/">Lihat inventory</a>{% if user.is_staff %}<a class="btn btn-primary" href="/kasir/">+ Transaksi baru</a>{% endif %}</div></div>
-<div class="metrics">
-<article class="metric"><span>Total obat</span><strong>{{ total_obat }}</strong><small>{{ total_kategori }} kategori ? {{ total_supplier }} supplier</small></article>
-<article class="metric"><span>Penjualan hari ini</span><strong style="font-size:24px">Rp {{ sales_today|floatformat:2 }}</strong><small>Transaksi PAID milik Anda</small></article>
-<article class="metric"><span>Transaksi hari ini</span><strong>{{ transactions_today }}</strong><small>Selain keranjang draft</small></article>
-<article class="metric"><span>Near expiry</span><strong>{{ near_expiry }}</strong><small>Dalam 30 hari ? {{ expired }} expired</small></article>
-</div>
-<div class="grid-two"><section class="panel panel-pad"><h2>Penjualan 7 hari terakhir</h2><p class="muted">Transaksi PAID berdasarkan tanggal transaksi.</p><div style="height:245px"><canvas id="sales-chart" aria-label="Grafik penjualan tujuh hari" role="img"></canvas></div><details style="margin-top:16px"><summary class="muted">Lihat data penjualan harian</summary><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Total PAID</th></tr></thead><tbody>{% for day, value in daily_sales %}<tr><td>{{ day|date:"d M Y" }}</td><td>Rp {{ value|floatformat:2 }}</td></tr>{% endfor %}</tbody></table></div></details></section>
-<section class="panel panel-pad"><h2>Obat terlaris</h2><p class="muted">Top 5 dari seluruh transaksi PAID Anda.</p><div class="table-wrap"><table><thead><tr><th>Obat</th><th>Terjual</th></tr></thead><tbody>{% for item in top_products %}<tr><td><a href="/obat/{{ item.obat_id }}/">{{ item.obat__nama_obat }}</a></td><td><span class="badge">{{ item.quantity }} unit</span></td></tr>{% empty %}<tr><td colspan="2" class="empty">Belum ada penjualan lunas.</td></tr>{% endfor %}</tbody></table></div></section></div>
-<div class="grid-two"><section class="panel"><div class="panel-pad"><div class="actions" style="justify-content:space-between"><h2 style="margin:0">Transaksi terbaru</h2><a href="/transaksi/">Lihat semua</a></div></div><div class="table-wrap"><table><thead><tr><th>Transaksi</th><th>Tanggal / User</th><th>Status</th><th>Total</th></tr></thead><tbody>{% for trx in recent_transactions %}<tr><td><a href="/transaksi/{{ trx.pk }}/">#{{ trx.pk }}</a></td><td>{{ trx.tanggal|date:"d M, H:i" }}<br><small class="muted">{{ trx.user.username }}</small></td><td><span class="badge badge-{{ trx.status }}">{{ trx.status }}</span></td><td>Rp {{ trx.total_harga }}</td></tr>{% empty %}<tr><td colspan="4" class="empty">Transaksi checkout akan muncul di sini.</td></tr>{% endfor %}</tbody></table></div></section>
-<section class="panel panel-pad"><h2>Inventory Alerts</h2><div class="actions" style="margin-bottom:16px"><a href="/obat/?inventory=low" class="badge badge-low">{{ low_stock }} stok rendah</a><a href="/obat/?inventory=empty" class="badge badge-empty">{{ out_of_stock }} stok habis</a><a href="/obat/?inventory=expired" class="badge badge-expired">{{ expired }} expired</a><a href="/obat/?inventory=near_expiry" class="badge badge-near_expiry">{{ near_expiry }} near expiry</a></div><div class="table-wrap"><table><thead><tr><th>Obat</th><th>Stok</th><th>Expiry</th></tr></thead><tbody>{% for o in inventory_alerts %}<tr><td><a href="/obat/{{ o.pk }}/">{{ o.nama_obat }}</a></td><td><span class="badge badge-{{ o.stock_status }}">{{ o.stok }} ? {{ o.stock_status }}</span></td><td><span class="badge badge-{{ o.expiry_status }}">{{ o.expiry_status }}</span></td></tr>{% empty %}<tr><td colspan="3" class="empty">Persediaan aman. Tidak ada peringatan.</td></tr>{% endfor %}</tbody></table></div><p class="muted" style="margin-top:16px;font-size:12px">Maksimal 10 peringatan. Gunakan filter inventory untuk daftar lengkap.</p></section></div>
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Overview / {{ today|date:"d F Y" }}</span>
+      <h1>Dashboard apotek</h1>
+      <p class="muted">Pantau persediaan dan aktivitas penjualan akun Anda.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/obat/">Lihat inventory</a>
+      {% if user.is_staff %}
+        <a class="btn btn-primary" href="/kasir/">+ Transaksi baru</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="metrics">
+    <article class="metric">
+      <span>Total obat</span>
+      <strong>{{ total_obat }}</strong>
+      <small>{{ total_kategori }} kategori &middot; {{ total_supplier }} supplier</small>
+    </article>
+    <article class="metric">
+      <span>Penjualan hari ini</span>
+      <strong class="metric-money">Rp {{ sales_today|rupiah }}</strong>
+      <small>Transaksi PAID milik Anda</small>
+    </article>
+    <article class="metric">
+      <span>Transaksi hari ini</span>
+      <strong>{{ transactions_today }}</strong>
+      <small>Selain keranjang draft</small>
+    </article>
+    <article class="metric">
+      <span>Near expiry</span>
+      <strong>{{ near_expiry }}</strong>
+      <small>Dalam 30 hari &middot; {{ expired }} expired</small>
+    </article>
+  </div>
+  <div class="grid-two">
+    <section class="panel panel-pad">
+      <h2>Penjualan 7 hari terakhir</h2>
+      <p class="muted">Transaksi PAID berdasarkan tanggal transaksi.</p>
+      <div style="height:245px">
+        <canvas id="sales-chart" aria-label="Grafik penjualan tujuh hari" role="img">
+        </canvas>
+      </div>
+      <details style="margin-top:16px">
+        <summary class="muted">Lihat data penjualan harian</summary>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Total PAID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day, value in daily_sales %}
+                <tr>
+                  <td>{{ day|date:"d M Y" }}</td>
+                  <td>Rp {{ value|rupiah }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+    <section class="panel panel-pad">
+      <h2>Obat terlaris</h2>
+      <p class="muted">Top 5 dari seluruh transaksi PAID Anda.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Obat</th>
+              <th>Terjual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in top_products %}
+              <tr>
+                <td>
+                  <a href="/obat/{{ item.obat_id }}/">{{ item.obat__nama_obat }}</a>
+                </td>
+                <td>
+                  <span class="badge">{{ item.quantity }} unit</span>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="2" class="empty">Belum ada penjualan lunas.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <div class="grid-two">
+    <section class="panel">
+      <div class="panel-pad">
+        <div class="actions" style="justify-content:space-between">
+          <h2 style="margin:0">Transaksi terbaru</h2>
+          <a href="/transaksi/">Lihat semua</a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Transaksi</th>
+              <th>Tanggal / User</th>
+              <th>Status</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for trx in recent_transactions %}
+              <tr>
+                <td>
+                  <a href="/transaksi/{{ trx.pk }}/">#{{ trx.pk }}</a>
+                </td>
+                <td>{{ trx.tanggal|date:"d M, H:i" }}<br>
+                  <small class="muted">{{ trx.user.username }}</small>
+                </td>
+                <td>
+                  <span class="badge badge-{{ trx.status }}">{{ trx.status }}</span>
+                </td>
+                <td>Rp {{ trx.total_harga|rupiah }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="4" class="empty">Transaksi checkout akan muncul di sini.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel panel-pad">
+      <h2>Inventory Alerts</h2>
+      <div class="actions" style="margin-bottom:16px">
+        <a href="/obat/?inventory=low" class="badge badge-low">{{ low_stock }} stok rendah</a>
+        <a href="/obat/?inventory=empty" class="badge badge-empty">{{ out_of_stock }} stok habis</a>
+        <a href="/obat/?inventory=expired" class="badge badge-expired">{{ expired }} expired</a>
+        <a href="/obat/?inventory=near_expiry" class="badge badge-near_expiry">{{ near_expiry }} near expiry</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Obat</th>
+              <th>Stok</th>
+              <th>Expiry</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in inventory_alerts %}
+              <tr>
+                <td>
+                  <a href="/obat/{{ o.pk }}/">{{ o.nama_obat }}</a>
+                </td>
+                <td>
+                  <span class="badge badge-{{ o.stock_status }}">{{ o.stok }} &middot; {{ o.stock_status }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-{{ o.expiry_status }}">{{ o.expiry_status }}</span>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="empty">Persediaan aman. Tidak ada peringatan.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:16px;font-size:12px">Maksimal 10 peringatan. Gunakan filter inventory untuk daftar lengkap.</p>
+    </section>
+  </div>
 {% endblock %}
-{% block scripts %}{{ chart_labels|json_script:"chart-labels" }}{{ chart_values|json_script:"chart-values" }}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script>
-if(window.Chart){new Chart(document.getElementById('sales-chart'),{type:'bar',data:{labels:JSON.parse(document.getElementById('chart-labels').textContent),datasets:[{label:'Penjualan (Rp)',data:JSON.parse(document.getElementById('chart-values').textContent),backgroundColor:'#168b7c',borderRadius:4,maxBarThickness:32}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#edf1f5'}}}}});}
-</script>{% endblock %}
+{% block scripts %}{{ chart_labels|json_script:"chart-labels" }}{{ chart_values|json_script:"chart-values" }}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+</script>
+  <script>
+    if(window.Chart){new Chart(document.getElementById('sales-chart'),{type:'bar',data:{labels:JSON.parse(document.getElementById('chart-labels').textContent),datasets:[{label:'Penjualan (Rp)',data:JSON.parse(document.getElementById('chart-values').textContent),backgroundColor:'#168b7c',borderRadius:4,maxBarThickness:32}]},options:{animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#edf1f5'}}}}});}
+  </script>
+{% endblock %}

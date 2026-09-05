@@ -1,3 +1,73 @@
 {% extends "meditrack/base.html" %}
+{% load meditrack_tags %}
 {% block title %}Transaksi #{{ object.pk }}{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Transaksi #{{ object.pk }}</h1><p class="muted">Rincian item dan progres pembayaran.</p></div><div class="actions"><a class="btn" href="/transaksi/">Kembali</a></div></div><section class="panel panel-pad"><dl class="detail-grid"><div><dt>Tanggal</dt><dd>{{ object.tanggal|date:"d M Y, H:i" }}</dd></div><div><dt>Pengguna</dt><dd>{{ object.user.username }}</dd></div><div><dt>Status</dt><dd><span class="badge badge-{{ object.status }}">{{ object.get_status_display }}</span></dd></div><div><dt>Total transaksi</dt><dd class="total">Rp {{ object.total_harga }}</dd></div></dl><div class="table-wrap"><table><thead><tr><th>Obat</th><th>Jumlah</th><th>Subtotal</th></tr></thead><tbody>{% for item in object.detail.all %}<tr><td>{{ item.obat.nama_obat }}</td><td>{{ item.jumlah }}</td><td>Rp {{ item.subtotal }}</td></tr>{% empty %}<tr><td colspan="3" class="empty">Keranjang belum memiliki item.</td></tr>{% endfor %}</tbody></table></div><div class="actions" style="margin-top:24px">{% if object.status == 'PENDING' %}<form method="post" action="{% url 'transaksi-pay' object.pk %}">{% csrf_token %}<button class="btn btn-primary">Simulasikan pembayaran</button></form><span class="muted">Tidak ada pembayaran uang sungguhan.</span>{% endif %}{% if object.status == 'DRAFT' %}<a class="btn btn-danger" href="/transaksi/{{ object.pk }}/hapus/">Hapus draft</a>{% endif %}</div></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Transaksi #{{ object.pk }}</h1>
+      <p class="muted">Rincian item dan progres pembayaran.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/transaksi/">Kembali</a>
+    </div>
+  </div>
+  <section class="panel panel-pad">
+    <dl class="detail-grid">
+      <div>
+        <dt>Tanggal</dt>
+        <dd>{{ object.tanggal|date:"d M Y, H:i" }}</dd>
+      </div>
+      <div>
+        <dt>Pengguna</dt>
+        <dd>{{ object.user.username }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <span class="badge badge-{{ object.status }}">{{ object.get_status_display }}</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Total transaksi</dt>
+        <dd class="total">Rp {{ object.total_harga|rupiah }}</dd>
+      </div>
+    </dl>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Obat</th>
+            <th>Jumlah</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in object.detail.all %}
+            <tr>
+              <td>{{ item.obat.nama_obat }}</td>
+              <td>{{ item.jumlah }}</td>
+              <td>Rp {{ item.subtotal|rupiah }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="empty">Keranjang belum memiliki item.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="actions" style="margin-top:24px">
+      {% if object.status == 'PENDING' %}
+        <form method="post" action="{% url 'transaksi-pay' object.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-primary">Simulasikan pembayaran</button>
+        </form>
+        <span class="muted">Tidak ada pembayaran uang sungguhan.</span>
+      {% endif %}
+      {% if object.status == 'DRAFT' %}
+        <a class="btn btn-danger" href="/transaksi/{{ object.pk }}/hapus/">Hapus draft</a>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

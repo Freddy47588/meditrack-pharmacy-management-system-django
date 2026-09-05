@@ -1,1 +1,13 @@
-{% if is_paginated %}<nav class="pagination" aria-label="Halaman daftar"><span class="muted">Halaman {{ page_obj.number }} dari {{ paginator.num_pages }} ? {{ paginator.count }} data</span><div class="actions">{% if page_obj.has_previous %}<a class="btn" href="?{{ query_params }}&amp;page={{ page_obj.previous_page_number }}">Sebelumnya</a>{% endif %}{% if page_obj.has_next %}<a class="btn" href="?{{ query_params }}&amp;page={{ page_obj.next_page_number }}">Berikutnya</a>{% endif %}</div></nav>{% endif %}
+{% if is_paginated %}
+  <nav class="pagination" aria-label="Halaman daftar">
+    <span class="muted">Halaman {{ page_obj.number }} dari {{ paginator.num_pages }} &middot; {{ paginator.count }} data</span>
+    <div class="actions">
+      {% if page_obj.has_previous %}
+        <a class="btn" href="?{{ query_params }}&amp;page={{ page_obj.previous_page_number }}">Sebelumnya</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a class="btn" href="?{{ query_params }}&amp;page={{ page_obj.next_page_number }}">Berikutnya</a>
+      {% endif %}
+    </div>
+  </nav>
+{% endif %}

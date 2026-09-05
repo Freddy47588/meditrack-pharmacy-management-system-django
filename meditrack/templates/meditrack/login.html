@@ -1,3 +1,22 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Selamat datang{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Selamat datang</h1><p class="muted">Masuk untuk mengakses dashboard dan transaksi Anda.</p></div><div class="actions"></div></div><section class="panel panel-pad form-panel"><h2>Masuk ke MediTrack</h2><form method="post">{% csrf_token %}{% include "meditrack/_fields.html" %}<input type="hidden" name="next" value="{{ next }}"><button class="btn btn-primary">Masuk</button></form></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Selamat datang</h1>
+      <p class="muted">Masuk untuk mengakses dashboard dan transaksi Anda.</p>
+    </div>
+    <div class="actions">
+    </div>
+  </div>
+  <section class="panel panel-pad form-panel">
+    <h2>Masuk ke MediTrack</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% include "meditrack/_fields.html" %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary">Masuk</button>
+    </form>
+  </section>
+{% endblock %}

@@ -1,3 +1,26 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Hapus draft #{{ object.pk }}{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Hapus draft #{{ object.pk }}</h1><p class="muted">Transaksi yang sudah checkout dilindungi dari penghapusan.</p></div><div class="actions"></div></div><section class="panel panel-pad form-panel">{% if object.status == 'DRAFT' %}<p>Hapus keranjang ini beserta seluruh itemnya?</p><form method="post" class="actions" style="margin-top:24px">{% csrf_token %}<button class="btn btn-danger">Hapus draft</button><a class="btn" href="/transaksi/{{ object.pk }}/">Batal</a></form>{% else %}<p>Transaksi {{ object.status }} tidak dapat dihapus.</p><a class="btn" href="/transaksi/{{ object.pk }}/">Kembali</a>{% endif %}</section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Hapus draft #{{ object.pk }}</h1>
+      <p class="muted">Transaksi yang sudah checkout dilindungi dari penghapusan.</p>
+    </div>
+    <div class="actions">
+    </div>
+  </div>
+  <section class="panel panel-pad form-panel">
+    {% if object.status == 'DRAFT' %}
+      <p>Hapus keranjang ini beserta seluruh itemnya?</p>
+      <form method="post" class="actions" style="margin-top:24px">
+        {% csrf_token %}
+        <button class="btn btn-danger">Hapus draft</button>
+        <a class="btn" href="/transaksi/{{ object.pk }}/">Batal</a>
+      </form>
+    {% else %}
+      <p>Transaksi {{ object.status }} tidak dapat dihapus.</p>
+      <a class="btn" href="/transaksi/{{ object.pk }}/">Kembali</a>
+    {% endif %}
+  </section>
+{% endblock %}

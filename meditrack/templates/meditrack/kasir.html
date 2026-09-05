@@ -1,4 +1,48 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Kasir{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Kasir</h1><p class="muted">Pilih obat, tentukan jumlah, lalu checkout untuk membuat transaksi.</p></div><div class="actions"></div></div><section class="panel panel-pad"><h2>Item penjualan</h2><p class="muted">Stok dan harga diperiksa kembali saat checkout. Pembayaran dilakukan pada detail transaksi.</p><form method="post">{% csrf_token %}{{ formset.management_form }}{{ formset.non_form_errors }}<div id="cash-items">{% for form in formset %}<div class="cash-row">{% include "meditrack/_fields.html" %}</div>{% endfor %}</div><div class="actions" style="margin-top:24px"><button type="button" class="btn" id="add-row">+ Tambah baris</button><button class="btn btn-primary">Checkout</button></div></form><template id="empty-row"><div class="cash-row">{% with form=formset.empty_form %}{% include "meditrack/_fields.html" %}{% endwith %}</div></template></section>{% endblock %}
-{% block scripts %}<script>document.getElementById('add-row').addEventListener('click',function(){const total=document.getElementById('id_form-TOTAL_FORMS');document.getElementById('cash-items').insertAdjacentHTML('beforeend',document.getElementById('empty-row').innerHTML.replaceAll('__prefix__',total.value));total.value=Number(total.value)+1;});</script>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Kasir</h1>
+      <p class="muted">Pilih obat, tentukan jumlah, lalu checkout untuk membuat transaksi.</p>
+    </div>
+    <div class="actions">
+    </div>
+  </div>
+  <section class="panel panel-pad">
+    <h2>Item penjualan</h2>
+    <p class="muted">Stok dan harga diperiksa kembali saat checkout. Pembayaran dilakukan pada detail transaksi.</p>
+    <form method="post">
+      {% csrf_token %}{{ formset.management_form }}{{ formset.non_form_errors }}<div id="cash-items">
+        {% for form in formset %}
+          <div class="cash-row">
+            {% include "meditrack/_fields.html" %}
+            <div class="cash-estimate" aria-live="polite">Pilih obat untuk melihat subtotal.</div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="cash-summary">
+        <span class="muted">Estimasi total</span>
+        <p class="total" id="cash-total" aria-live="polite">Rp 0,00</p>
+        <small class="muted">Harga dan stok final divalidasi saat checkout.</small>
+      </div>
+      <div class="actions" style="margin-top:24px">
+        <button type="button" class="btn" id="add-row">+ Tambah baris</button>
+        <button class="btn btn-primary">Checkout</button>
+      </div>
+    </form>
+    <template id="empty-row">
+      <div class="cash-row">
+        {% with form=formset.empty_form %}
+          {% include "meditrack/_fields.html" %}
+        {% endwith %}
+        <div class="cash-estimate" aria-live="polite">Pilih obat untuk melihat subtotal.</div>
+      </div>
+    </template>
+  </section>
+{% endblock %}
+{% block scripts %}
+  {% load static %}{{ products|json_script:"cash-products" }}<script src="{% static 'meditrack/kasir.js' %}">
+  </script>
+{% endblock %}

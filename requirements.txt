@@ -5,10 +5,10 @@ Django==4.2.7
 djangorestframework==3.14.0
 
 
-# Filtering, Search, Ordering (P10)
+# Filtering, Search, Ordering
 django-filter==23.5
 
-# Swagger / OpenAPI (P12)
+# Swagger / OpenAPI
 drf-spectacular==0.27.1
 
 # CORS untuk frontend terpisah (Decoupled)

@@ -1,3 +1,22 @@
 {% extends "meditrack/base.html" %}
 {% block title %}Hapus Obat{% endblock %}
-{% block content %}<div class="page-header"><div><span class="eyebrow">MediTrack / Workspace</span><h1>Hapus Obat</h1><p class="muted">Periksa kembali data sebelum melanjutkan.</p></div><div class="actions"></div></div><section class="panel panel-pad form-panel"><p>Hapus <strong>{{ object }}</strong>?</p><p class="muted">Data yang telah dihapus tidak dapat dipulihkan melalui aplikasi.</p><form method="post" class="actions" style="margin-top:24px">{% csrf_token %}<button class="btn btn-danger">Hapus Obat</button><a class="btn" href="/obat/">Batal</a></form></section>{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MediTrack / Workspace</span>
+      <h1>Hapus Obat</h1>
+      <p class="muted">Periksa kembali data sebelum melanjutkan.</p>
+    </div>
+    <div class="actions">
+    </div>
+  </div>
+  <section class="panel panel-pad form-panel">
+    <p>Hapus <strong>{{ object }}</strong>?</p>
+    <p class="muted">Data yang telah dihapus tidak dapat dipulihkan melalui aplikasi.</p>
+    <form method="post" class="actions" style="margin-top:24px">
+      {% csrf_token %}
+      <button class="btn btn-danger">Hapus Obat</button>
+      <a class="btn" href="/obat/">Batal</a>
+    </form>
+  </section>
+{% endblock %}
