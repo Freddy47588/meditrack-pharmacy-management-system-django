@@ -66,7 +66,7 @@ meditrack-pharmacy-management-system-django/
 │
 ├── meditrack_project/        # Konfigurasi utama Django
 ├── meditrack/                # App utama (models, views, serializers)
-├── db.sqlite3
+├── db.sqlite3                # Database lokal (tidak di-track Git)
 ├── manage.py
 └── requirements.txt
 ```
@@ -105,6 +105,7 @@ GET    /api/transaksi/my/
 1. Clone repository
    ```bash
    git clone https://github.com/Freddy47588/meditrack-pharmacy-management-system-django.git
+   cd meditrack-pharmacy-management-system-django
    ```
 
 2. Aktifkan virtual environment
