@@ -15,6 +15,7 @@ class SupplierSerializer(serializers.ModelSerializer):
 
 
 class ObatSerializer(serializers.ModelSerializer):
+    stok = serializers.IntegerField(min_value=0)
     kategori_nama = serializers.CharField(source="kategori.nama_kategori", read_only=True)
     supplier_nama = serializers.CharField(source="supplier.nama_supplier", read_only=True)
 
@@ -24,6 +25,7 @@ class ObatSerializer(serializers.ModelSerializer):
 
 
 class DetailTransaksiSerializer(serializers.ModelSerializer):
+    jumlah = serializers.IntegerField(min_value=0)
     # ✅ input harus bisa kirim id obat
     obat = serializers.PrimaryKeyRelatedField(queryset=Obat.objects.all())
 

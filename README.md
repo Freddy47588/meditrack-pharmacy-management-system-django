@@ -119,15 +119,50 @@ GET    /api/transaksi/my/
    pip install -r requirements.txt
    ```
 
-4. Jalankan migrasi
+4. Konfigurasi environment (opsional untuk development)
+   ```bash
+   cp .env.example .env
+   ```
+   Di PowerShell gunakan `Copy-Item .env.example .env`. Isi
+   `DJANGO_SECRET_KEY` dengan nilai pribadi yang dibuat menggunakan:
+   ```bash
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+   Simpan nilainya dalam tanda kutip di `.env`; jangan commit file tersebut.
+   Tanpa key, development menggunakan key acak per proses sehingga session
+   tidak bertahan setelah restart. Untuk deployment, wajib isi key, set
+   `DJANGO_DEBUG=false`, dan atur `DJANGO_ALLOWED_HOSTS` (dipisahkan koma).
+   Environment sistem memiliki prioritas terhadap `.env`.
+
+5. Jalankan migrasi
    ```bash
    python manage.py migrate
    ```
 
-5. Jalankan server
+6. Jalankan server
    ```bash
    python manage.py runserver
    ```
+
+## Automated Testing
+
+Prasyarat: Python 3.11, virtual environment aktif, dan dependency dari
+`requirements.txt` terpasang (Django 4.2.7 / DRF 3.14.0). Tidak memerlukan
+pytest, layanan eksternal, atau data development.
+
+```bash
+python manage.py check
+python manage.py test
+```
+
+Tersedia **42 test** dalam `meditrack/tests/`: model dan constraint, CRUD API,
+autentikasi token, isolasi transaksi pengguna, cart/checkout/pay, validasi form,
+URL, Swagger UI, dan konfigurasi environment. Django membuat database SQLite
+test di memori, menjalankan migrasi, lalu membersihkannya; `db.sqlite3` tidak
+digunakan oleh test. Semua data test dibuat saat test berjalan.
+
+Suite ini merupakan baseline, belum mencakup seluruh kasus konkurensi dan
+masalah existing pada akses detail transaksi serta routing update item cart.
 
 ---
 
